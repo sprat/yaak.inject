@@ -12,7 +12,7 @@ Here is a tutorial that explains how to use this module.
 
 First, import the injection module so that you can use the injection
 functionality:
-  >>> from nak import inject
+  >>> from yaak import inject
 
 Then, create a class whose instances have to be injected a "feature"
 identified by the string 'IService' (but could be any hashable type: a
