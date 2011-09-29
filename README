@@ -7,7 +7,7 @@
 YAAK stands for Yet Another Application Kit. It's a set of tools to help developing
 enterprise applications in python.
 
-`YAAK's inject`_ is a package from the YAAK toolkit that provides depedency injection
+`YAAK's inject`_ is a package from the YAAK toolkit that provides dependency injection
 to your application.
 
 
