@@ -29,7 +29,6 @@ setup(
     url='http://bitbucket.org/sprat/yaak.inject',
     packages=['yaak'],
     namespace_packages=['yaak'],
-    install_requires=['setuptools'],
     test_suite='yaak.tests',
     classifiers=[
         'Development Status :: 1 - Planning',
