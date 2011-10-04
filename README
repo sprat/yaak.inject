@@ -8,14 +8,16 @@ YAAK stands for Yet Another Application Kit. It's a set of tools to help develop
 enterprise applications in python.
 
 `YAAK's inject`_ is a package from the YAAK toolkit that provides dependency injection
-to your application.
+to your applications.
 
 
 Installation
 ============
 
-You should have ``easy_install`` (from setuptools, or something equivalent) installed on your system.
-Just type ``easy_install yaak.inject`` on a command prompt to get the YAAK's inject package installed.
+You should have ``easy_install`` (from setuptools, or something equivalent) installed
+on your system.
+Just type ``easy_install yaak.inject`` on a command prompt to get the YAAK's inject
+package installed.
 
 
 .. _YAAK's inject: http://bitbucket.org/sprat/yaak.inject

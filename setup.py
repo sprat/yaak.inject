@@ -5,7 +5,7 @@
 # LICENSE file in this distribution for details.
 
 import os.path
-from setuptools import setup, find_packages
+from setuptools import setup
 from yaak.inject import __version__ as version
 
 
@@ -14,7 +14,7 @@ def read_file(filename):
     return open(os.path.join(current_dir, filename)).read()
 
 
-desc = """yaak.inject brings dependency injection into your applications"""
+desc = """yaak.inject provides dependency injection to your applications"""
 
 
 setup(
