@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2010 Sylvain Prat. This program is open-source software,
 # and may be redistributed under the terms of the MIT license. See the
-# LICENSE file in this distribution for details.
+# LICENSE.txt file in this distribution for details.
 
 """The `YAAK.inject`_ module implements dependency injection. See
 `this article`_ from Martin Fowler for an explanation of dependency
