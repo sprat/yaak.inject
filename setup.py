@@ -31,13 +31,19 @@ setup(
     namespace_packages=['yaak'],
     test_suite='yaak.tests',
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
+        'Environment :: Web Environment',
+        'Environment :: Win32 (MS Windows)',
+        'Environment :: X11 Applications',
+        'Environment :: MacOS X',
+        'Environment :: Other Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Topic :: Software Development :: Libraries :: Application Frameworks',
     ],
     platforms='any'
 )
