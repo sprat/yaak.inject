@@ -9,12 +9,13 @@ from setuptools import setup
 from yaak.inject import __version__ as version
 
 
-def read_file(filename):
-    current_dir = os.path.dirname(__file__)
-    return open(os.path.join(current_dir, filename)).read()
+def read(*rnames):
+    return open(os.path.join(os.getcwd(), *rnames)).read()
 
 
 desc = """yaak.inject provides dependency injection to your applications"""
+
+long_description = read('README.txt') + '\n' + read('CHANGES.txt')
 
 
 setup(
@@ -23,7 +24,7 @@ setup(
     author='Sylvain Prat',
     author_email='sylvain.prat+yaak.inject@gmail.com',
     description=desc,
-    long_description=read_file('README.txt'),
+    long_description=long_description,
     license='MIT License',
     keywords='dependency, injection, inject',
     url='http://bitbucket.org/sprat/yaak.inject',
