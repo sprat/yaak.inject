@@ -23,7 +23,7 @@ setup(
     author='Sylvain Prat',
     author_email='sylvain.prat+yaak.inject@gmail.com',
     description=desc,
-    long_description=read_file('README'),
+    long_description=read_file('README.txt'),
     license='MIT License',
     keywords='dependency, injection, inject',
     url='http://bitbucket.org/sprat/yaak.inject',

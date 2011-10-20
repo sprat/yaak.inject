@@ -10,7 +10,7 @@ developing enterprise applications in python.
 `YAAK.inject`_ is a package from the YAAK toolkit that provides dependency
 injection to your applications.
 
-This package is released under the MIT License. Please read the ``LICENSE``
+This package is released under the MIT License. Please see the ``LICENSE.txt``
 file for more information.
 
 
