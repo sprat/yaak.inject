@@ -3,14 +3,8 @@
 # and may be redistributed under the terms of the MIT license. See the
 # LICENSE.txt file in this distribution for details.
 
-"""The `YAAK.inject`_ module implements dependency injection. See
-`this article`_ from Martin Fowler for an explanation of dependency
-injection and its usefulness when developing enterprise application.
-
-.. _this article: http://martinfowler.com/articles/injection.html
-.. _YAAK.inject: http://bitbucket.org/sprat/yaak.inject
-
-Here is a tutorial that explains how to use this module.
+"""The ``yaak.inject`` module implements dependency injection. Here is a
+tutorial that explains how to use this module.
 
 First, import the ``yaak.inject`` module so that you can use the injection
 functionality in your application:

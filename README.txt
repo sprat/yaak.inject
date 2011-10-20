@@ -1,17 +1,30 @@
 .. -*- restructuredtext -*-
 
 =============
- YAAK.inject
+ yaak.inject
 =============
 
 YAAK stands for Yet Another Application Kit. It's a set of tools that help
 developing enterprise applications in python.
 
-`YAAK.inject`_ is a package from the YAAK toolkit that provides dependency
-injection to your applications.
+``yaak.inject`` is a package from the YAAK toolkit that provides dependency
+injection to your applications. See this `Martin Fowler's article`_ for
+an explanation of dependency injection and its usefulness when developing
+enterprise application.
 
-This package is released under the MIT License. Please see the ``LICENSE.txt``
-file for more information.
+
+.. _Martin Fowler's article: http://martinfowler.com/articles/injection.html
+
+
+Support
+=======
+
+This project is hosted on bitbucket.org at:
+https://bitbucket.org/sprat/yaak.inject. Please report issues via the bug
+tracker.
+
+Automated tests are run over the mercurial repository regularly. Build results
+can be found at: https://jenkins.shiningpanda.com/sprat/job/yaak.inject/
 
 
 Installation
@@ -28,6 +41,3 @@ You can also install the package from a source tarball. Decompress the
 source archive and type::
 
   $ python setup.py install
-
-
-.. _YAAK.inject: http://bitbucket.org/sprat/yaak.inject

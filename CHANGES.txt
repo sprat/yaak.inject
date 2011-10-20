@@ -1,0 +1,9 @@
+.. -*- restructuredtext -*-
+
+Changelog
+=========
+
+0.1.0 (21-Oct-2012)
+-------------------
+
+* Initial release
