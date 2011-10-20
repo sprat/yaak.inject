@@ -3,88 +3,101 @@
 # and may be redistributed under the terms of the MIT license. See the
 # LICENSE file in this distribution for details.
 
-"""
-This module implements dependency injection. See
-http://martinfowler.com/articles/injection.html for an explanation of
-dependency injection.
+"""The `YAAK.inject`_ module implements dependency injection. See
+`this article`_ from Martin Fowler for an explanation of dependency
+injection and its usefulness when developing enterprise application.
+
+.. _this article: http://martinfowler.com/articles/injection.html
+.. _YAAK.inject: http://bitbucket.org/sprat/yaak.inject
 
 Here is a tutorial that explains how to use this module.
 
-First, import the injection module so that you can use the injection
-functionality:
+First, import the ``yaak.inject`` module so that you can use the injection
+functionality in your application:
+
   >>> from yaak import inject
 
-Then, create a class whose instances have to be injected a "feature"
-identified by the string 'IService' (but could be any hashable type: a
-class for example):
+Create a class whose instances have to be injected a *feature*
+identified by the string ``IService`` (but could be any hashable type, such
+as a class):
+
   >>> class Client(object):
-  ...     service = inject.Attr('IService')  # inject a feature as an attribute
-  ...     def use_service(self):
-  ...         self.service.do_something()  # use the injected feature
+  ...   service = inject.Attr('IService')  # inject a feature as an attribute
+  ...   def use_service(self):
+  ...     self.service.do_something()  # use the injected feature
   ...
 
-Then, create a class (or a callable) that implements the "feature":
+Also, create a class (or any callable) that implements the *feature*:
+
   >>> class Service(object):
-  ...     def do_something(self):
-  ...         print "Service: I'm working hard"
+  ...   def do_something(self):
+  ...     print "Service: I'm working hard"
   ...
 
-Later, when you configure your application, you provide an implementation for
-each feature. In this case, we declare an implementation for the 'IService'
-feature:
+Then, when you configure your application, you need to wire an implementation for
+each *feature*. In this case, we provide an implementation for the
+``IService`` feature:
+
   >>> inject.provide('IService', Service)
 
 Note that we provide a factory (class) for the feature and not the instance
 itself. You'll see later why.
 
 Now, a Client instance can use the service:
+
   >>> client = Client()
   >>> client.use_service()
   Service: I'm working hard
 
-When you use the default behavior, all instances of the Client class will be
-injected the same Service instance:
+When you use the default ``provide`` behavior, all instances of the Client
+class will be injected the same Service instance:
+
   >>> another_client = Client()
-  >>> id(client.service) == id(another_client.service)
+  >>> client.service is another_client.service
   True
 
-That's because the default behavior when you provide a feature is to create a
+In fact, the default behavior when you ``provide`` a feature is to create a
 thread-local singleton that is injected in all instances that request the
-feature. In fact, that's what we call *scope*: it defines the lifetime of the
+feature. That's what we call the *scope*: it defines the lifetime of the
 feature instance.
 
-You may want a different 'IService' instance for each Client. You can do that
-by changing the default scope to 'Transient' when you provide the feature:
-  >>> inject.provide('IService', Service, scope=Scope.Transient)
+You may want a different ``IService`` instance for each Client. You can do that
+by changing the default scope to ``Transient`` when you provide the feature:
 
-Thus, a different Service instance is injected in each new Client instance:
+  >>> inject.provide('IService', Service, scope=inject.Scope.Transient)
+
+Then, a different Service instance is injected in each new Client instance:
+
   >>> client = Client()
   >>> another_client = Client()
-  >>> id(client.service) == id(another_client.service)
+  >>> client.service is another_client.service
   False
 
 You can also declare injected features as function/method parameters instead
 of attributes:
+
   >>> class Client(object):
-  ...     @inject.Param(service='IService')
-  ...     def __init__(self, text, service):
-  ...         self.text = text
-  ...         self.service = service
-  ...     def use_service(self):
-  ...         print self.text
-  ...         self.service.do_something()
+  ...   @inject.Param(service='IService')
+  ...   def __init__(self, text, service):
+  ...     self.text = text
+  ...     self.service = service
+  ...   def use_service(self):
+  ...     print self.text
+  ...     self.service.do_something()
   ...
 
 Then you could use the Client class and get the parameters injected
 automatically if you don't provide a value for them:
-    >>> client = Client('This is a text')
-    >>> client.use_service()
-    This is a text
-    Service: I'm working hard
+  
+  >>> client = Client('This is a text')
+  >>> client.use_service()
+  This is a text
+  Service: I'm working hard
 
 That's the easiest way to declare injected parameters. But if you want to
-keep your class decoupled from the injection framework, you can also set
-injection later:
+keep your class decoupled from the injection framework, you can also define
+the injection afterwards:
+  
   >>> class Client(object):
   ...   def __init__(self, text, service):
   ...     self.text = text
@@ -108,7 +121,7 @@ import logging
 import threading
 
 
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 
 # logger that could help debug injection issues
