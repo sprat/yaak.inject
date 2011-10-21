@@ -38,7 +38,7 @@ setup(
     packages=['yaak'],
     namespace_packages=['yaak'],
     test_suite='yaak.tests',
-    extras_require={'doc': ('Sphinx')},
+    extras_require={'doc': ('Sphinx', 'Sphinx-PyPI-upload',)},
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
