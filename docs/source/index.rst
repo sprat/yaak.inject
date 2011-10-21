@@ -6,7 +6,7 @@
    :maxdepth: 2
 
 
-.. Include:: ../README.txt
+.. Include:: ../../README.txt
 
 Tutorial
 ========
@@ -14,13 +14,13 @@ Tutorial
 .. automodule:: yaak.inject
 
 
-.. Include:: ../CHANGES.txt
+.. Include:: ../../CHANGES.txt
 
 
 MIT License
 ===========
 
-.. Include:: ../LICENSE.txt
+.. Include:: ../../LICENSE.txt
 
 
 Indices and tables
