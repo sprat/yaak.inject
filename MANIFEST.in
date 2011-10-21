@@ -1,0 +1,2 @@
+include *.txt
+recursive-include docs make.bat Makefile source/*
