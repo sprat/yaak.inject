@@ -4,8 +4,8 @@
 # and may be redistributed under the terms of the MIT license. See the
 # LICENSE.txt file in this distribution for details.
 
-import os.path
-from setuptools import setup
+import os
+from setuptools import setup, find_packages
 from yaak.inject import __version__ as version
 
 
@@ -34,7 +34,7 @@ setup(
     license='MIT License',
     keywords='dependency, injection, inject',
     url='http://bitbucket.org/sprat/yaak.inject',
-    packages=['yaak'],
+    packages=find_packages(),
     namespace_packages=['yaak'],
     test_suite='yaak.tests',
     extras_require={'doc': ('Sphinx', 'Sphinx-PyPI-upload',)},

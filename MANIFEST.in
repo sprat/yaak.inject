@@ -1,2 +1,4 @@
 include *.txt
-recursive-include docs make.bat Makefile source/*
+recursive-include docs *
+prune docs/build
+prune .hg
