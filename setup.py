@@ -17,7 +17,7 @@ desc = """yaak.inject provides dependency injection to your applications"""
 
 long_description = read('README.txt') + '\n' + read('CHANGES.txt')
 
-
+# FIXME: remember to add a download url
 setup(
     name='yaak.inject',
     version=version,
@@ -25,12 +25,14 @@ setup(
     author_email='sylvain.prat+yaak.inject@gmail.com',
     description=desc,
     long_description=long_description,
+    #download_url='...',
     license='MIT License',
     keywords='dependency, injection, inject',
     url='http://bitbucket.org/sprat/yaak.inject',
     packages=['yaak'],
     namespace_packages=['yaak'],
     test_suite='yaak.tests',
+    extras_require={'doc': ('Sphinx')},
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
