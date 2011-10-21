@@ -230,7 +230,7 @@ man_pages = [
 texinfo_documents = [
   ('index', 'yaakinject', u'yaak.inject Documentation', u'Sylvain Prat',
    'yaakinject',
-   'yaak.inject provides dependency injection to your applications.',
+   'A dependency injection framework for your python applications',
    'Miscellaneous'),
 ]
 

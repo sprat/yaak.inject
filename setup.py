@@ -13,7 +13,7 @@ def read(*rnames):
     return open(os.path.join(os.getcwd(), *rnames)).read()
 
 
-desc = """yaak.inject provides dependency injection to your applications"""
+desc = """A dependency injection framework for your python applications"""
 
 long_description = (
     read('README.txt') +
