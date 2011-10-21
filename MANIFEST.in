@@ -1,4 +1,4 @@
 include *.txt
-recursive-include docs *
+graft docs
 prune docs/build
 prune .hg
