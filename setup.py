@@ -22,7 +22,6 @@ long_description = (
 )
 
 # FIXME: remember to add a download url
-# FIXME: remember to add a link to the online documentation
 # FIXME: setup an API documentation
 setup(
     name='yaak.inject',
