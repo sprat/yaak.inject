@@ -4,8 +4,9 @@ syntax: regexp
 ^cover$
 ^build$
 ^dist$
-^\.coverage$
+^docs/build$
 ^htmlcov$
+^\.coverage$
 ^\.settings$
 ^\.project$
 ^\.pydevproject$
