@@ -15,9 +15,15 @@ def read(*rnames):
 
 desc = """yaak.inject provides dependency injection to your applications"""
 
-long_description = read('README.txt') + '\n' + read('CHANGES.txt')
+long_description = (
+    read('README.txt') +
+    '\n' +
+    read('CHANGES.txt')
+)
 
 # FIXME: remember to add a download url
+# FIXME: remember to add a link to the online documentation
+# FIXME: setup an API documentation
 setup(
     name='yaak.inject',
     version=version,
