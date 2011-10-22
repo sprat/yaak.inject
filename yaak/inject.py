@@ -366,9 +366,9 @@ class Param(object):
         callable_provider = isinstance(self.provider, collections.Callable)
         provider = self.provider() if callable_provider else self.provider
         for param, feature in self.injections.items():
-            resolver = BindingResolver(lambda feature=feature, param=param:
-                                       get_feature(feature, param))
-            injected_params[param] = resolver
+            binding = late_binding(lambda feature=feature, param=param:
+                                   get_feature(feature, param))
+            injected_params[param] = binding
 
         # inject it (functools.partial is not suitable here)
         new_func = bind(injected_function, **injected_params)
@@ -391,8 +391,9 @@ def bind(func, **frozen_args):
     called frozen arguments. But unlike the :func:`functools.partial` function, 
     the frozen parameters can be anywhere in the signature of the transformed
     function, they are not required to be the first or last ones. Also, you
-    can pass a :class:`BindingResolver` instance as the value of a parameter
-    to get the value from a resolve function (e.g. to implement late binding).
+    can pass a :func:`late_binding` function as the value of a parameter
+    to get the value from a call to this function when the bound function is
+    called (this implements late binding).
 
     Say you have a function :func:`add` defined like this::
 
@@ -403,12 +404,27 @@ def bind(func, **frozen_args):
 
       >>> add_one = bind(add, b=1)
 
-    Now, `:func:`add_one` has only one parameters *a* since *b* will always
+    Now, :func:`add_one` has only one parameters *a* since *b* will always
     get the value 1. So::
 
       >>> add_one(1)
       2
       >>> add_one(2)
+      3
+      
+    Now, an example of late binding::
+      
+      >>> import itertools
+      >>> count = itertools.count(0)
+      >>> def more_and_more():
+      ...   return count.next()
+      ...
+      >>> add_more_and_more = bind(add, b=late_binding(more_and_more)) 
+      >>> add_more_and_more(1)
+      1
+      >>> add_more_and_more(1)
+      2
+      >>> add_more_and_more(1)
       3
     """
     # special case for methods (bound or unbound)
@@ -424,10 +440,12 @@ def bind(func, **frozen_args):
         raise BindNotSupportedError(msg)
 
     def inner_func(*inner_args, **inner_kwargs):
-        # call the value if it is an instance of BindingResolver: this
-        # implements late binding
+        # call the value if it is a late binding factory
         def resolve(value):
-            return value() if isinstance(value, BindingResolver) else value
+            if getattr(value, '__late_binding_factory__', False):
+                return value()
+            else:
+                return value
 
         arg_dict = dict((arg, resolve(value))
                         for arg, value in frozen_args.items())
@@ -464,24 +482,13 @@ def bind(func, **frozen_args):
     return inner_func
 
 
-# FIXME: replace BindingResolver by something like this:
-#def _resolver(func):
-#    func.__bind_resolver__ = True
-#    return func
+def late_binding(func):
+    """Create a late binding by providing a factory function to be called when
+    the bound function is called"""
+    func.__late_binding_factory__ = True
+    return func
 #
-#bind.resolver = _resolver
 
-
-class BindingResolver(object):
-    """Special class to be used in the bind function in order to implement
-    late binding."""
-    def __init__(self, factory):
-        """Pass a *factory* the create the object to be bound with the
-        :func:`bind` function"""
-        self._factory = factory
-
-    def __call__(self):
-        return self._factory()
 
 
 class WSGIRequestScope(object):

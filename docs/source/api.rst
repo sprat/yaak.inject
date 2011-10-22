@@ -47,7 +47,7 @@ Helper tools
 
 .. autofunction:: yaak.inject.bind
 
-.. autoclass:: yaak.inject.BindingResolver
+.. autofunction:: yaak.inject.late_binding
 
 
 Exceptions

@@ -369,10 +369,10 @@ class TestBind(unittest.TestCase):
         func = inject.bind(func, b=lambda x: x * x)
         self.assertEqual(4, func(2))
 
-    def test_bind_with_resolver(self):
+    def test_bind_with_late_binding(self):
         def func(a, b):
             return a + 2 * b
-        func = inject.bind(func, b=inject.BindingResolver(lambda: 1))
+        func = inject.bind(func, b=inject.late_binding(lambda: 1))
         self.assertEqual(4, func(2))
 
     def test_bind_fail_with_varargs(self):
