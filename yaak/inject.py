@@ -241,7 +241,6 @@ class FeatureProvider(object):
         reference on the feature instance will not get a new instance."""
         self._feature_descriptors[feature] = (factory, scope)
 
-    # FIXME: fix thread safety issues with the Application scope: use a lock
     def get(self, feature):
         """Retrieve a (scoped) feature instance. Either find the instance in
         the associated context or create a new instance using the factory
@@ -251,6 +250,13 @@ class FeatureProvider(object):
             raise MissingFeatureError("No feature provided for " + feature)
         factory, scope = feature_descriptor
         scope_context = self.scope_manager.context(scope)
+
+        # acquire the lock
+        if scope == Scope.Application:
+            lock = threading.Lock()
+            lock.acquire()
+
+        # get or create the feature instance
         instance = scope_context.get(feature)
         if instance is None:
             instance = factory()
@@ -260,6 +266,11 @@ class FeatureProvider(object):
         else:
             log.debug('Found %r in scope %s for the feature %r'
                       % (instance, scope, feature))
+
+        # release the lock
+        if scope == Scope.Application:
+            lock.release()
+
         return instance
 
     __getitem__ = get  # for convenience
