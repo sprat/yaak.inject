@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2010 Sylvain Prat. This program is open-source software,
+# Copyright (c) 2011 Sylvain Prat. This program is open-source software,
 # and may be redistributed under the terms of the MIT license. See the
 # LICENSE.txt file in this distribution for details.
 
@@ -52,11 +52,12 @@ class will be injected the same Service instance:
 
 In fact, the default behavior when you :func:`provide` a feature is to create a
 thread-local singleton that is injected in all instances that request the
-feature. That's what we call the *scope*: it defines the lifetime of the
+feature. That's what we call the *scope*: it defines the lifespan of the
 feature instance.
 
 You may want a different ``IService`` instance for each Client. You can do that
-by changing the default scope to :attr:`Scope.Transient` when you provide the feature:
+by changing the default scope to :attr:`Scope.Transient` when you provide the
+feature:
 
   >>> inject.provide('IService', Service, scope=inject.Scope.Transient)
 
@@ -124,13 +125,13 @@ log = logging.getLogger(__name__)
 
 class Scope(object):
     """Enumeration of the different scope values. Not all scopes are available
-    in all contexts."""
+    in every circumstance."""
 
     Application = 'Application'
     """One instance per application (subject to thread-safety issues)"""
 
     Thread = 'Thread'
-    """One instance per thread: this is the default (more secure)"""
+    """One instance per thread: this is the default"""
 
     Transient = 'Transient'
     """A new instance is created each time the feature is requested"""
@@ -157,22 +158,22 @@ class ScopeManager(threading.local):
         self._context[Scope.Application] = _ApplicationContext
 
     def enter_scope(self, scope, context=None):
-        """Called when we enter a ``scope``. You can eventually provide the
-        ``context`` to be used in this ``scope``, that is, a dictionary of
+        """Called when we enter a *scope*. You can eventually provide the
+        *context* to be used in this *scope*, that is, a dictionary of
         the instances to be injected for each feature. This is especially
-        useful for implementing "session" scopes, when we want to reinstall
-        the a previous context."""
+        useful for implementing session scopes, when we want to reinstall
+        a previous context."""
         self._context[scope] = context if context is not None else {}
 
     def exit_scope(self, scope):
-        """Called when we exit the ``scope``. Clear the context for this
-        ``scope``."""
+        """Called when we exit the *scope*. Clear the context for this
+        *scope*."""
         del self._context[scope]
 
     def context(self, scope):
-        """Get the context for the ``scope``, that is a dictionary of the
-        instances per feature. Raises a :exc:`UndefinedScopeError` if the
-        ``scope`` is not defined."""
+        """Get the context for the *scope*, that is a dictionary of the
+        feature instances. Raises a :exc:`UndefinedScopeError` if the
+        *scope* is not yet defined."""
         if scope != Scope.Transient:
             scope_context = self._context.get(scope)
         else:
@@ -185,15 +186,15 @@ class ScopeManager(threading.local):
 
 
 class ScopeContext(object):
-    """Context manager that defines the lifetime of a scope, for injection."""
+    """Context manager that defines the lifespan of a scope."""
 
     def __init__(self, scope, context=None, scope_manager=None):
-        """Creates a scope context for the specified `scope`. If `context`
+        """Creates a scope context for the specified *scope*. If *context*
         is passed a dictionary, the created instances will be stored in
         this dictionary. Otherwise, a new dictionary will be created for
-        storing instance each time we enter the scope. So the `context`
-        argument can be used to recall a previous context. If `scope_manager`
-        is specified, contexts will be stored in this `scope_manager`.
+        storing instance each time we enter the scope. So the *context*
+        argument can be used to recall a previous context. If *scope_manager*
+        is specified, contexts will be stored in this *scope_manager*.
         Otherwise, the default scope manager will be used instead."""
         self.scope = scope
         self.context = context
@@ -214,15 +215,15 @@ class MissingFeatureError(Exception):
 
 
 class FeatureProvider(object):
-    """Provides features for injection when requested, create instances
-    when necessary and use the scope manager to obtain the scoped context
-    where we store the created instances."""
+    """Provides the feature instances for injection when requested. It creates
+    instances when necessary and uses the scope manager to obtain the scoped
+    contexts where we store the feature instances."""
 
     def __init__(self, scope_manager=None):
-        """Creates a feature provider. If `scope_manager` is specified,
-        feature instances will be stored in the contexts given by the
-        `scope_manager`. Otherwise, the default scope manager will be
-        used instead."""
+        """Creates a feature provider. If *scope_manager* is specified,
+        feature instances will be stored in the contexts of the
+        *scope_manager*. Otherwise, the default scope manager will be
+        used."""
         self.scope_manager = scope_manager or _DefaultScopeManager
         self.clear()
 
@@ -231,32 +232,34 @@ class FeatureProvider(object):
         self._feature_descriptors = {}
 
     def provide(self, feature, factory, scope=Scope.Thread):
-        """Provide a factory that build (scoped) instances of the feature.
+        """Provide a *factory* that build (scoped) instances of the *feature*.
+        By default, the scope of the *feature* instance is :attr:`Scope.Thread`,
+        but you can change this by providing a *scope* parameter.
 
         Note that you can change the factory for a feature by providing the
-        same feature again, but the injected instances that have a reference
-        on the feature instance will not get a new instance."""
+        same feature again, but the injected instances that already have a
+        reference on the feature instance will not get a new instance."""
         self._feature_descriptors[feature] = (factory, scope)
 
+    # FIXME: fix thread safety issues with the Application scope: use a lock
     def get(self, feature):
         """Retrieve a (scoped) feature instance. Either find the instance in
         the associated context or create a new instance using the factory
         method and store it in the context."""
         feature_descriptor = self._feature_descriptors.get(feature)
         if feature_descriptor is None:
-            raise MissingFeatureError("No feature provided for", feature)
+            raise MissingFeatureError("No feature provided for " + feature)
         factory, scope = feature_descriptor
         scope_context = self.scope_manager.context(scope)
         instance = scope_context.get(feature)
         if instance is None:
             instance = factory()
             scope_context[feature] = instance
-            log.debug('New instance ' + repr(instance) +
-                      ' created in scope ' + scope +
-                      ' for the feature ' + repr(feature))
+            log.debug('New instance %r created in scope %s for the feature %r'
+                      % (instance, scope, feature))
         else:
-            log.debug('Found ' + repr(instance) + ' in scope ' + scope +
-                      ' for the feature ' + repr(feature))
+            log.debug('Found %r in scope %s for the feature %r'
+                      % (instance, scope, feature))
         return instance
 
     __getitem__ = get  # for convenience
@@ -266,8 +269,8 @@ class Attr(object):
     """Descriptor that provides attribute-based dependency injection."""
 
     def __init__(self, feature, provider=None):
-        """Inject a `feature` as an instance attribute. `feature` can be any 
-        hashable identifier. If a `provider` is specified, the feature instance
+        """Inject a *feature* as an instance attribute. *feature* can be any 
+        hashable identifier. If a *provider* is specified, the feature instance
         will be retrieved from this provider. Otherwise, the default
         feature provider will be used.
         
@@ -306,9 +309,8 @@ class Attr(object):
 
         # replace this descriptor by the bound feature instance
         setattr(obj, self._name, feature)
-        log.debug('The feature ' + repr(feature) +
-                  ' has been injected into the attribute ' +
-                  repr(self._name) + ' of ' + repr(obj))
+        log.debug('%r has been injected into the attribute %r of %r'
+                  % (feature, self._name, obj))
 
         return feature
 
@@ -319,11 +321,11 @@ class Param(object):
     def __init__(self, provider=None, **injections):
         """Inject feature instances into function parameters. First, specify
         the parameters that should be injected as keyword arguments (e.g.
-        param=<feature> where <feature> is the feature identifier). Then, 
-        each time the function will be called, the arguments will be passed
-        (scoped) feature instances. If a `provider` is specified, the
-        feature instances will be retrieved from this provider. Otherwise,
-        the default feature provider will be used.
+        ``param=<feature>`` where ``<feature>`` is the feature identifier).
+        Then, each time the function will be called, the parameters will
+        receive feature instances. If a *provider* is specified, the feature
+        instances will be retrieved from this provider. Otherwise, the default
+        feature provider will be used.
         
         Example:
           >>> from yaak import inject
@@ -344,12 +346,6 @@ class Param(object):
         else:
             return self._wrap(wrapped)
 
-    def _retrieve_feature(self, feature, provider, message):
-        """Retrieve a feature from the provider"""
-        feature = provider.get(feature)
-        log.debug(message)
-        return feature
-
     def _wrap(self, func):
         """Wrap a function so that one parameter is automatically injected
         and the other parameters should be passed to the wrapper function in
@@ -359,15 +355,19 @@ class Param(object):
         injected_params = getattr(func, 'injected_params', {})
         injected_function = getattr(func, 'injected_function', func)
 
+        def get_feature(feature, param):
+            instance = provider.get(feature)
+            msg = ('%r has been injected into the parameter %r of %r'
+                   % (instance, param, injected_function))
+            log.debug(msg)
+            return instance
+
         # add the new injected parameter
         callable_provider = isinstance(self.provider, collections.Callable)
         provider = self.provider() if callable_provider else self.provider
         for param, feature in self.injections.items():
-            message = ('The feature ' + repr(feature) +
-                       ' has been injected into the parameter ' +
-                       repr(param) + ' of ' + repr(injected_function))
-            resolver = BindingResolver(lambda feature=feature, message=message:
-                self._retrieve_feature(feature, provider, message))
+            resolver = BindingResolver(lambda feature=feature, param=param:
+                                       get_feature(feature, param))
             injected_params[param] = resolver
 
         # inject it (functools.partial is not suitable here)
@@ -399,11 +399,11 @@ def bind(func, **frozen_args):
       >>> def add(a, b):
       ...   return a + b
 
-    You can bind the parameter ``b`` to the value 1::
+    You can bind the parameter *b* to the value 1::
 
       >>> add_one = bind(add, b=1)
 
-    Now, ``add_one`` has only one parameters ``a`` since ``b`` will always
+    Now, `:func:`add_one` has only one parameters *a* since *b* will always
     get the value 1. So::
 
       >>> add_one(1)
@@ -449,8 +449,8 @@ def bind(func, **frozen_args):
             # check that the positional argument is not also passed in
             # keyword arguments?
             if arg in inner_kwargs:
-                msg = func.__name__ + "() got multiple values" + \
-                    " for keyword argument '" + arg + "'"
+                msg = ("%s() got multiple values for keyword argument '%s'"
+                       % (func.__name__, arg))
                 raise TypeError(msg)
 
             # OK, use the next positional argument
@@ -464,24 +464,41 @@ def bind(func, **frozen_args):
     return inner_func
 
 
+# FIXME: replace BindingResolver by something like this:
+#def _resolver(func):
+#    func.__bind_resolver__ = True
+#    return func
+#
+#bind.resolver = _resolver
+
+
 class BindingResolver(object):
-    def __init__(self, func):
-        self._func = func
+    """Special class to be used in the bind function in order to implement
+    late binding."""
+    def __init__(self, factory):
+        """Pass a *factory* the create the object to be bound with the
+        :func:`bind` function"""
+        self._factory = factory
 
     def __call__(self):
-        return self._func()
+        return self._factory()
 
 
 class WSGIRequestScope(object):
-    """WSGI middleware that provides the 'Request' scope for the
-    wrapped application."""
+    """WSGI middleware that installs the :attr:`Scope.Request` contexts for
+    the wrapped application."""
 
     def __init__(self, app, scope_manager=None):
+        """Installs :attr:`Scope.Request` contexts for the application *app*.
+        That is, a new context will be used in each HTTP request for storing the
+        Request scoped features. You can eventually pass the *scope_manager*
+        that will handle the scope contexts. Otherwise, the default scope
+        manager will be used."""
         self.app = app
         self.scope_manager = scope_manager
 
     def __call__(self, environ, start_response):
-        """Provide a 'Request' scope for each request."""
+        """WSGI protocol"""
         with ScopeContext(scope=Scope.Request,
                           scope_manager=self.scope_manager):
             # We iterate over the results to force the application to
@@ -497,10 +514,10 @@ _DefaultScopeManager = ScopeManager()
 _DefaultFeatureProvider = FeatureProvider()
 
 provide = _DefaultFeatureProvider.provide
-"""A global ``provide`` function that uses the default feature provider"""
+""":meth:`provide` a feature to the default feature provider"""
 
 get = _DefaultFeatureProvider.get
-"""A global ``get`` function that uses the default feature provider"""
+""":meth:`get` a feature from the default feature provider"""
 
 clear = _DefaultFeatureProvider.clear
-"""A global ``clear`` function that uses the default feature provider"""
+""":meth:`clear` the features from the default feature provider"""

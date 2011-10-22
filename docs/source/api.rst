@@ -20,26 +20,30 @@ Providing the features
 .. autoclass:: yaak.inject.FeatureProvider
 
 
-Scoping
-=======
+Scopes
+======
 
 .. autoclass:: yaak.inject.Scope
 
-.. autoclass:: yaak.inject.ScopeContext
-
 .. autoclass:: yaak.inject.ScopeManager
+
+.. autoclass:: yaak.inject.ScopeContext
 
 .. autoclass:: yaak.inject.WSGIRequestScope
 
 
-Global helpers
-==============
+Using the default feature provider
+==================================
 
 .. autofunction:: yaak.inject.provide
 
 .. autofunction:: yaak.inject.get
 
 .. autofunction:: yaak.inject.clear
+
+
+Helper tools
+============
 
 .. autofunction:: yaak.inject.bind
 
