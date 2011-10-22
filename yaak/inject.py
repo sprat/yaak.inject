@@ -3,10 +3,10 @@
 # and may be redistributed under the terms of the MIT license. See the
 # LICENSE.txt file in this distribution for details.
 
-"""The ``yaak.inject`` module implements dependency injection. Here is a
+"""The :mod:`yaak.inject` module implements dependency injection. Here is a
 tutorial that explains how to use this module.
 
-First, import the ``yaak.inject`` module so that you can use the injection
+First, import the :mod:`yaak.inject` module so that you can use the injection
 functionality in your application:
 
   >>> from yaak import inject
@@ -28,8 +28,8 @@ Also, create a class (or any callable) that implements the *feature*:
   ...     print "Service: I'm working hard"
   ...
 
-Then, when you configure your application, you need to wire an implementation for
-each *feature*. In this case, we provide an implementation for the
+Then, when you configure your application, you need to wire an implementation
+for each *feature*. In this case, we provide an implementation for the
 ``IService`` feature:
 
   >>> inject.provide('IService', Service)
@@ -43,20 +43,20 @@ Now, a Client instance can use the service:
   >>> client.use_service()
   Service: I'm working hard
 
-When you use the default ``provide`` behavior, all instances of the Client
+When you use the default :func:`provide` behavior, all instances of the Client
 class will be injected the same Service instance:
 
   >>> another_client = Client()
   >>> client.service is another_client.service
   True
 
-In fact, the default behavior when you ``provide`` a feature is to create a
+In fact, the default behavior when you :func:`provide` a feature is to create a
 thread-local singleton that is injected in all instances that request the
 feature. That's what we call the *scope*: it defines the lifetime of the
 feature instance.
 
 You may want a different ``IService`` instance for each Client. You can do that
-by changing the default scope to ``Transient`` when you provide the feature:
+by changing the default scope to :attr:`Scope.Transient` when you provide the feature:
 
   >>> inject.provide('IService', Service, scope=inject.Scope.Transient)
 
@@ -125,24 +125,29 @@ log = logging.getLogger(__name__)
 class Scope(object):
     """Enumeration of the different scope values. Not all scopes are available
     in all contexts."""
-    # one instance per application (shared by threads)
+
     Application = 'Application'
-    # one instance per thread - this is the default (secure)
+    """One instance per application (subject to thread-safety issues)"""
+
     Thread = 'Thread'
-    # a new instance is created each time the feature is injected
+    """One instance per thread: this is the default (more secure)"""
+
     Transient = 'Transient'
-    # one instance per HTTP request
+    """A new instance is created each time the feature is requested"""
+
     Request = 'Request'
-    # one instance per HTTP session
+    """One instance per HTTP request"""
+
     Session = 'Session'
+    """One instance per HTTP session"""
 
 
 class UndefinedScopeError(Exception):
-    """Exception raised when using a scope that has not been defined yet."""
+    """Exception raised when using a scope that has not been entered yet."""
 
 
 class ScopeManager(threading.local):
-    """Manages scope contexts where we store the instances to be used in
+    """Manages scope contexts where we store the instances to be used for the
     injection."""
 
     def __init__(self):
@@ -152,12 +157,22 @@ class ScopeManager(threading.local):
         self._context[Scope.Application] = _ApplicationContext
 
     def enter_scope(self, scope, context=None):
+        """Called when we enter a ``scope``. You can eventually provide the
+        ``context`` to be used in this ``scope``, that is, a dictionary of
+        the instances to be injected for each feature. This is especially
+        useful for implementing "session" scopes, when we want to reinstall
+        the a previous context."""
         self._context[scope] = context if context is not None else {}
 
     def exit_scope(self, scope):
+        """Called when we exit the ``scope``. Clear the context for this
+        ``scope``."""
         del self._context[scope]
 
     def context(self, scope):
+        """Get the context for the ``scope``, that is a dictionary of the
+        instances per feature. Raises a :exc:`UndefinedScopeError` if the
+        ``scope`` is not defined."""
         if scope != Scope.Transient:
             scope_context = self._context.get(scope)
         else:
@@ -170,7 +185,7 @@ class ScopeManager(threading.local):
 
 
 class ScopeContext(object):
-    """Defines a scope for injection using a python context manager."""
+    """Context manager that defines the lifetime of a scope, for injection."""
 
     def __init__(self, scope, context=None, scope_manager=None):
         """Creates a scope context for the specified `scope`. If `context`
@@ -212,7 +227,7 @@ class FeatureProvider(object):
         self.clear()
 
     def clear(self):
-        """Unregister all features"""
+        """Unregister all features."""
         self._feature_descriptors = {}
 
     def provide(self, feature, factory, scope=Scope.Thread):
@@ -250,25 +265,32 @@ class FeatureProvider(object):
 class Attr(object):
     """Descriptor that provides attribute-based dependency injection."""
 
-    def __init__(self, feature, feature_provider=None):
-        """Inject a `feature` (given as an identifier) in an instance
-        attribute. If a `feature_provider` is specified, the feature instance
-        will be retrieved from this provider. Otherwise, the default feature
-        provider will be used instead."""
+    def __init__(self, feature, provider=None):
+        """Inject a `feature` as an instance attribute. `feature` can be any 
+        hashable identifier. If a `provider` is specified, the feature instance
+        will be retrieved from this provider. Otherwise, the default
+        feature provider will be used.
+        
+        Example:
+          >>> from yaak import inject
+          >>> class Client(object):
+          ...   service = inject.Attr('IService')
+        """
         self.feature = feature
-        self.provider = feature_provider or _DefaultFeatureProvider
+        self.provider = provider or _DefaultFeatureProvider
         self._name = None  # cache for the attribute name
 
     def _find_name(self, type):
-        """Look for the name of the attribute that references this descriptor.
-        """
+        """Look for the name of the attribute that references this
+        descriptor."""
         for cls in type.__mro__:  # support inheritance of injected classes
             for key, value in cls.__dict__.items():
                 if value is self:
                     return key
 
     def __get__(self, obj, type=None):
-        """Bind a feature instance to the object passed to the descriptor"""
+        """Descriptor protocol: bind a feature instance to the object passed
+        to the descriptor."""
         if obj is None:
             msg = 'Injection is not supported for class instances'
             raise AttributeError(msg)
@@ -294,31 +316,41 @@ class Attr(object):
 class Param(object):
     """Decorator that provides parameter-based dependency injection."""
 
-    def __init__(self, feature_provider=None, **injections):
+    def __init__(self, provider=None, **injections):
         """Inject feature instances into function parameters. First, specify
-        the parameters that should be injected a feature (given as an
-        identifier) as keyword arguments (e.g. param='feature'). Then, each
-        time the function will be called, the arguments will be passed new
-        (scoped) feature instances. If a `feature_provider` is specified, the
+        the parameters that should be injected as keyword arguments (e.g.
+        param=<feature> where <feature> is the feature identifier). Then, 
+        each time the function will be called, the arguments will be passed
+        (scoped) feature instances. If a `provider` is specified, the
         feature instances will be retrieved from this provider. Otherwise,
-        the default feature provider will be used instead."""
+        the default feature provider will be used.
+        
+        Example:
+          >>> from yaak import inject
+          >>> class Client(object):
+          ...   inject.Param(service='IService')
+          ...   def func(self, service):
+          ...     pass  # use service
+        """
         self.injections = injections
-        self.provider = feature_provider or _DefaultFeatureProvider
+        self.provider = provider or _DefaultFeatureProvider
 
     def __call__(self, wrapped):
+        """Decorator protocol"""
         if inspect.isclass(wrapped):
             # support class injection by injecting the __init__ method
-            wrapped.__init__ = self.wrap(wrapped.__init__)
+            wrapped.__init__ = self._wrap(wrapped.__init__)
             return wrapped
         else:
-            return self.wrap(wrapped)
+            return self._wrap(wrapped)
 
     def _retrieve_feature(self, feature, provider, message):
+        """Retrieve a feature from the provider"""
         feature = provider.get(feature)
         log.debug(message)
         return feature
 
-    def wrap(self, func):
+    def _wrap(self, func):
         """Wrap a function so that one parameter is automatically injected
         and the other parameters should be passed to the wrapper function in
         the same order as in the wrapped function, or by keyword arguments"""
@@ -347,34 +379,37 @@ class Param(object):
         return new_func
 
 
-class BindingNotSupportedError(Exception):
-    """Exception raised when a function could not be used in the bind method"""
+class BindNotSupportedError(Exception):
+    """Exception raised when a function could not be used in the bind method."""
 
 
 def bind(func, **frozen_args):
-    """This function is similar to the functools.partial function: it
+    """This function is similar to the :func:`functools.partial` function: it
     implements partial application. That is, it's a way to transform a function
     to another function with less arguments, because some of the arguments of
     the original function will get some fixed values: these arguments are
-    called frozen arguments. Unlike the functools.partial function, frozen
-    parameters can be anywhere in the signature of the transformed function,
-    they are not required to be the first or last ones. Also, you can pass a
-    BindingResolver instance as the value of a parameter to get the value from
-    a resolve function (e.g. to implement late binding).
+    called frozen arguments. But unlike the :func:`functools.partial` function, 
+    the frozen parameters can be anywhere in the signature of the transformed
+    function, they are not required to be the first or last ones. Also, you
+    can pass a :class:`BindingResolver` instance as the value of a parameter
+    to get the value from a resolve function (e.g. to implement late binding).
 
-    Say you have a function `add` defined like this:
-    >>> def add(a, b):
-    ...   return a + b
+    Say you have a function :func:`add` defined like this::
 
-    You can bind the parameter `b` to the value `1`:
-    >>> add_one = bind(add, b=1)
+      >>> def add(a, b):
+      ...   return a + b
 
-    Now, `add_one` has only one parameters `a` since `b` will always get the
-    value `1`. So:
-    >>> add_one(1)
-    2
-    >>> add_one(2)
-    3
+    You can bind the parameter ``b`` to the value 1::
+
+      >>> add_one = bind(add, b=1)
+
+    Now, ``add_one`` has only one parameters ``a`` since ``b`` will always
+    get the value 1. So::
+
+      >>> add_one(1)
+      2
+      >>> add_one(2)
+      3
     """
     # special case for methods (bound or unbound)
     self = getattr(func, 'im_self', None)
@@ -386,7 +421,7 @@ def bind(func, **frozen_args):
     # variable arguments list is not supported
     if argspec.varargs is not None:
         msg = 'Could not bind a function with a variable arguments list'
-        raise BindingNotSupportedError(msg)
+        raise BindNotSupportedError(msg)
 
     def inner_func(*inner_args, **inner_kwargs):
         # call the value if it is an instance of BindingResolver: this
@@ -460,6 +495,12 @@ class WSGIRequestScope(object):
 _ApplicationContext = {}
 _DefaultScopeManager = ScopeManager()
 _DefaultFeatureProvider = FeatureProvider()
+
 provide = _DefaultFeatureProvider.provide
+"""A global ``provide`` function that uses the default feature provider"""
+
 get = _DefaultFeatureProvider.get
+"""A global ``get`` function that uses the default feature provider"""
+
 clear = _DefaultFeatureProvider.clear
+"""A global ``clear`` function that uses the default feature provider"""

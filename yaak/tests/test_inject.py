@@ -378,7 +378,7 @@ class TestBind(unittest.TestCase):
     def test_bind_fail_with_varargs(self):
         def func(a, *args):
             return (a, args)
-        self.assertRaises(inject.BindingNotSupportedError,
+        self.assertRaises(inject.BindNotSupportedError,
                           lambda: inject.bind(func, a=0))
 
     def test_bind_work_with_keyword_args(self):
