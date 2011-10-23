@@ -21,8 +21,6 @@ long_description = (
     read('CHANGES.txt')
 )
 
-# FIXME: remember to add a download url
-# FIXME: setup an API documentation
 setup(
     name='yaak.inject',
     version=version,
