@@ -184,7 +184,7 @@ class ScopeManager(threading.local):
                                 context_lock)
 
     def exit_scope(self, scope):
-        """Called when we exit the *scope*. Clear the context for this
+        """Called when we exit the *scope*. Remove the context for this
         *scope*."""
         del self._context[scope]
 
@@ -203,8 +203,8 @@ class ScopeManager(threading.local):
         return context, lock
 
     def clear_context(self, scope):
-        """Clears the context for a *scope*, that is, remove all feature
-        instances from this *scope*."""
+        """Clears the context for a *scope*, that is, remove all instances
+        from the *scope* context."""
         # get the context dictionary for the scope or raise an error
         context, lock = self._get_context(scope)
         # acquire the context lock before modifying the context
