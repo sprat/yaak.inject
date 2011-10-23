@@ -147,61 +147,135 @@ class UndefinedScopeError(Exception):
     """Exception raised when using a scope that has not been entered yet."""
 
 
+# global application context
+_ApplicationContext = {}
+# global to acquire when updating the application context
+_ApplicationContextLock = threading.Lock()
+
+
 class ScopeManager(threading.local):
     """Manages scope contexts where we store the instances to be used for the
     injection."""
+    # We use a thread-local storage because, when we enter/exit a scope, it is
+    # only for the current thread. However, the context dictionaries may be
+    # shared between the threads, so a context lock may be necessary to avoid
+    # race conditions when updating the context dictionaries.
 
     def __init__(self):
         """Creates a new scope manager."""
         self._context = {}
-        self._context[Scope.Thread] = {}
-        self._context[Scope.Application] = _ApplicationContext
+        # install the Scope.Thread context
+        self.enter_scope(Scope.Thread,
+                         {})
+        # install the Scope.Application context
+        self.enter_scope(Scope.Application,
+                         _ApplicationContext,
+                         _ApplicationContextLock)
 
-    def enter_scope(self, scope, context=None):
+    def enter_scope(self, scope, context=None, context_lock=None):
         """Called when we enter a *scope*. You can eventually provide the
         *context* to be used in this *scope*, that is, a dictionary of
         the instances to be injected for each feature. This is especially
         useful for implementing session scopes, when we want to reinstall
-        a previous context."""
-        self._context[scope] = context if context is not None else {}
+        a previous context. You can also pass a lock to acquire when modifying
+        the context dictionary via the parameter *context_lock* if the scope
+        is subject to thread concurrency issues."""
+        self._context[scope] = (context if context is not None else {},
+                                context_lock)
 
     def exit_scope(self, scope):
         """Called when we exit the *scope*. Clear the context for this
         *scope*."""
         del self._context[scope]
 
-    def context(self, scope):
+    def _get_context(self, scope):
         """Get the context for the *scope*, that is a dictionary of the
         feature instances. Raises a :exc:`UndefinedScopeError` if the
         *scope* is not yet defined."""
         if scope != Scope.Transient:
-            scope_context = self._context.get(scope)
+            context, lock = self._context.get(scope, (None, None))
         else:
-            scope_context = {}
+            context, lock = {}, None
 
-        if scope_context is None:
+        if context is None:
             raise UndefinedScopeError("No scope defined for " + scope)
 
-        return scope_context
+        return context, lock
+
+    def clear_context(self, scope):
+        """Clears the context for a *scope*, that is, remove all feature
+        instances from this *scope*."""
+        # get the context dictionary for the scope or raise an error
+        context, lock = self._get_context(scope)
+        # acquire the context lock before modifying the context
+        if lock:
+            lock.acquire()
+        # clear the context
+        context.clear()
+        # release the context lock
+        if lock:
+            lock.release()
+
+    def get_or_create(self, scope, key, factory):
+        """Get the value for a *key* from the *scope* context, or create one
+        using the *factory* provided if there's no value for this *key*. Raises
+        a :exc:`UndefinedScopeError` if the *scope* is not defined."""
+        # get the context dictionary for the scope or raise an error
+        context, lock = self._get_context(scope)
+
+        # get or create the feature instance
+        instance = context.get(key)
+        if instance is None:
+            # acquire the context lock before modifying the context
+            if lock:
+                lock.acquire()
+
+            # re-check since the lock was not acquired in the first check
+            instance = context.get(key)
+            if instance is None:
+                # create the instance
+                instance = factory()
+                context[key] = instance
+                log.debug('New instance %r created in scope %s for the key %r'
+                          % (instance, scope, key))
+
+            # release the context lock
+            if lock:
+                lock.release()
+        else:
+            log.debug('Found %r in scope %s for the key %r'
+                      % (instance, scope, key))
+
+        return instance
+
+
+# default scope manager instance
+_DefaultScopeManager = ScopeManager()
 
 
 class ScopeContext(object):
     """Context manager that defines the lifespan of a scope."""
 
-    def __init__(self, scope, context=None, scope_manager=None):
+    def __init__(self, scope, context=None, context_lock=None,
+                 scope_manager=None):
         """Creates a scope context for the specified *scope*. If *context*
         is passed a dictionary, the created instances will be stored in
         this dictionary. Otherwise, a new dictionary will be created for
         storing instance each time we enter the scope. So the *context*
-        argument can be used to recall a previous context. If *scope_manager*
-        is specified, contexts will be stored in this *scope_manager*.
-        Otherwise, the default scope manager will be used instead."""
+        argument can be used to recall a previous context. If *context_lock*
+        is specified, the lock will be acquired/released when the context
+        dictionary is updated, in order to avoid thread concurrency issues. 
+        If *scope_manager* is specified, contexts will be stored in this
+        *scope_manager*. Otherwise, the default scope manager will be used."""
         self.scope = scope
         self.context = context
+        self.context_lock = context_lock
         self.scope_manager = scope_manager or _DefaultScopeManager
 
     def __enter__(self):
-        self.scope_manager.enter_scope(self.scope, self.context)
+        self.scope_manager.enter_scope(self.scope,
+                                       self.context,
+                                       self.context_lock)
         return self
 
     def __exit__(self, type, value, traceback):
@@ -249,31 +323,13 @@ class FeatureProvider(object):
         if feature_descriptor is None:
             raise MissingFeatureError("No feature provided for " + feature)
         factory, scope = feature_descriptor
-        scope_context = self.scope_manager.context(scope)
-
-        # acquire the lock
-        if scope == Scope.Application:
-            lock = threading.Lock()
-            lock.acquire()
-
-        # get or create the feature instance
-        instance = scope_context.get(feature)
-        if instance is None:
-            instance = factory()
-            scope_context[feature] = instance
-            log.debug('New instance %r created in scope %s for the feature %r'
-                      % (instance, scope, feature))
-        else:
-            log.debug('Found %r in scope %s for the feature %r'
-                      % (instance, scope, feature))
-
-        # release the lock
-        if scope == Scope.Application:
-            lock.release()
-
-        return instance
+        return self.scope_manager.get_or_create(scope, feature, factory)
 
     __getitem__ = get  # for convenience
+
+
+# the default feature provider instance
+_DefaultFeatureProvider = FeatureProvider()
 
 
 class Attr(object):
@@ -526,11 +582,7 @@ class WSGIRequestScope(object):
                 yield item
 
 
-# module constants
-_ApplicationContext = {}
-_DefaultScopeManager = ScopeManager()
-_DefaultFeatureProvider = FeatureProvider()
-
+# module helpers
 provide = _DefaultFeatureProvider.provide
 """:meth:`provide` a feature to the default feature provider"""
 

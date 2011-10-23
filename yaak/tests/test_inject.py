@@ -26,54 +26,53 @@ class TestScopeManager(unittest.TestCase):
         self.scope_manager = inject.ScopeManager()
 
     def store_in_context(self, scope, key, value):
-        context = self.scope_manager.context(scope)
-        context[key] = value
+        self.scope_manager.get_or_create(scope, key, lambda: value)
 
     def test_scope_application(self):
         try:
             self.store_in_context(inject.Scope.Application, 'test', 'test')
-            context = self.scope_manager.context(inject.Scope.Application)
+            context, _ = self.scope_manager._get_context(inject.Scope.Application)
             self.assertEquals(dict(test='test'), context)
-            context = run_in_thread(
-                lambda: self.scope_manager.context(inject.Scope.Application))
+            context, _ = run_in_thread(
+                lambda: self.scope_manager._get_context(inject.Scope.Application))
             self.assertEquals(dict(test='test'), context)
         finally:
-            self.scope_manager.context(inject.Scope.Application).clear()
+            self.scope_manager.clear_context(inject.Scope.Application)
 
     def test_scope_transient(self):
         self.store_in_context(inject.Scope.Transient, 'test', 'test')
-        self.assertEquals({},
-                          self.scope_manager.context(inject.Scope.Transient))
+        context, _ = self.scope_manager._get_context(inject.Scope.Transient)
+        self.assertEquals({}, context)
 
     def test_scope_thread(self):
         self.store_in_context(inject.Scope.Thread, 'test', 'test')
-        context = self.scope_manager.context(inject.Scope.Thread)
+        context, _ = self.scope_manager._get_context(inject.Scope.Thread)
         self.assertEquals(dict(test='test'), context)
-        context = run_in_thread(
-            lambda: self.scope_manager.context(inject.Scope.Thread))
+        context, _ = run_in_thread(
+            lambda: self.scope_manager._get_context(inject.Scope.Thread))
         self.assertEquals({}, context)
 
     def test_fail_when_we_try_to_use_an_undeclared_scope(self):
         self.assertRaises(inject.UndefinedScopeError,
-                          lambda: self.scope_manager.context('MyScope'))
+                          lambda: self.scope_manager._get_context('MyScope'))
 
     def test_enter_exit_scope(self):
         self.scope_manager.enter_scope('MyScope')
         self.store_in_context('MyScope', 'test', 'test')
-        self.assertEquals(dict(test='test'),
-                          self.scope_manager.context('MyScope'))
+        self.assertEquals((dict(test='test'), None),
+                          self.scope_manager._get_context('MyScope'))
         self.scope_manager.exit_scope('MyScope')
         self.assertRaises(inject.UndefinedScopeError,
-                          lambda: self.scope_manager.context('MyScope'))
+                          lambda: self.scope_manager._get_context('MyScope'))
 
     def test_enter_exit_scope_with_context(self):
         context = dict(test='test')
         self.scope_manager.enter_scope('MyScope', context)
-        self.assertEquals(dict(test='test'),
-                          self.scope_manager.context('MyScope'))
+        self.assertEquals((dict(test='test'), None),
+                          self.scope_manager._get_context('MyScope'))
         self.scope_manager.exit_scope('MyScope')
         self.assertRaises(inject.UndefinedScopeError,
-                          lambda: self.scope_manager.context('MyScope'))
+                          lambda: self.scope_manager._get_context('MyScope'))
 
 
 class TestScopeContext(unittest.TestCase):
@@ -112,6 +111,16 @@ class TestFeatureProvider(unittest.TestCase):
         o = self.provide_singleton('singleton')
         self.assertEquals(o, self.provider.get('singleton'))
 
+#    def test_provide_none(self):
+#        def create_none():
+#            create_none.calls += 1
+#            return None
+#        create_none.calls = 0
+#        self.provider.provide('test', create_none)
+#        self.assertEquals(None, self.provider.get('test'))
+#        self.provider.get('test')
+#        self.assertEquals(1, create_none.calls)
+
     def test_provide_class_in_application_scope(self):
         try:
             class Factory():
@@ -126,7 +135,7 @@ class TestFeatureProvider(unittest.TestCase):
             self.assert_(isinstance(f1, Factory))
         finally:
             scope_manager = self.provider.scope_manager
-            scope_manager.context(inject.Scope.Application).clear()
+            scope_manager.clear_context(inject.Scope.Application)
 
     def test_provide_class_in_transient_scope(self):
         class Factory():
@@ -175,7 +184,7 @@ class TestFeatureProvider(unittest.TestCase):
             self.assert_(o is o_thread)
         finally:
             scope_manager = self.provider.scope_manager
-            scope_manager.context(inject.Scope.Application).clear()
+            scope_manager.clear_context(inject.Scope.Application)
 
     def test_invalid_scope(self):
         self.provider.provide('singleton', object, scope='oops')
