@@ -222,17 +222,17 @@ class ScopeManager(threading.local):
         a :exc:`UndefinedScopeError` if the *scope* is not defined."""
         # get the context dictionary for the scope or raise an error
         context, lock = self._get_context(scope)
-
+        marker = object()
         # get or create the feature instance
-        instance = context.get(key)
-        if instance is None:
+        instance = context.get(key, marker)
+        if instance is marker:
             # acquire the context lock before modifying the context
             if lock:
                 lock.acquire()
 
             # re-check since the lock was not acquired in the first check
-            instance = context.get(key)
-            if instance is None:
+            instance = context.get(key, marker)
+            if instance is marker:
                 # create the instance
                 instance = factory()
                 context[key] = instance

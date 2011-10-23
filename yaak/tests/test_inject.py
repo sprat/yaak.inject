@@ -111,15 +111,15 @@ class TestFeatureProvider(unittest.TestCase):
         o = self.provide_singleton('singleton')
         self.assertEquals(o, self.provider.get('singleton'))
 
-#    def test_provide_none(self):
-#        def create_none():
-#            create_none.calls += 1
-#            return None
-#        create_none.calls = 0
-#        self.provider.provide('test', create_none)
-#        self.assertEquals(None, self.provider.get('test'))
-#        self.provider.get('test')
-#        self.assertEquals(1, create_none.calls)
+    def test_provide_none(self):
+        def create_none():
+            create_none.calls += 1
+            return None
+        create_none.calls = 0
+        self.provider.provide('test', create_none)
+        self.assertEquals(None, self.provider.get('test'))
+        self.provider.get('test')
+        self.assertEquals(1, create_none.calls)
 
     def test_provide_class_in_application_scope(self):
         try:
