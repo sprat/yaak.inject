@@ -116,7 +116,7 @@ import logging
 import threading
 
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 # logger that could help debug injection issues
