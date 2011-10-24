@@ -360,7 +360,7 @@ class FeatureProvider(object):
     def get(self, feature):
         """Retrieve a (scoped) feature instance. Either find the instance in
         the associated context or create a new instance using the factory
-        method and store it in the context. Raise a
+        method and store it in the context. Raises a
         :exc:`yaak.inject.MissingFeatureError` when no feature has been
         provided yet."""
         feature_descriptor = self._feature_descriptors.get(feature)
