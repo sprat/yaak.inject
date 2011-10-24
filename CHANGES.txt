@@ -12,6 +12,6 @@ Changelog
 
 * Fixed the broken lock acquire/release implementation when updating the
   application context dictionary.
-* The locking mechanism is now available in all scopes.
+* The locking mechanism is now available for all scopes.
 * The context manager is now responsible for updating the context dictionaries.
 * Fixed duplicate factory calls when providing a factory returning None
