@@ -43,8 +43,8 @@ Now, a Client instance can use the service:
   >>> client.use_service()
   Service: I'm working hard
 
-When you use the default :func:`provide` behavior, all instances of the Client
-class will be injected the same Service instance:
+When you use the default :func:`provide` behavior, all instances
+of the Client class will be injected the same Service instance:
 
   >>> another_client = Client()
   >>> client.service is another_client.service
@@ -185,13 +185,16 @@ class ScopeManager(threading.local):
 
     def exit_scope(self, scope):
         """Called when we exit the *scope*. Remove the context for this
-        *scope*."""
+        *scope*. Raises a :exc:`yaak.inject.UndefinedScopeError` if the
+        *scope* is not defined."""
+        if not scope in self._context:
+            raise UndefinedScopeError("No scope defined for " + scope)
         del self._context[scope]
 
     def _get_context(self, scope):
         """Get the context for the *scope*, that is a dictionary of the
-        feature instances. Raises a :exc:`UndefinedScopeError` if the
-        *scope* is not yet defined."""
+        feature instances. Raises a :exc:`yaak.inject.UndefinedScopeError`
+        if the *scope* is not defined."""
         if scope != Scope.Transient:
             context, lock = self._context.get(scope, (None, None))
         else:
@@ -219,7 +222,8 @@ class ScopeManager(threading.local):
     def get_or_create(self, scope, key, factory):
         """Get the value for a *key* from the *scope* context, or create one
         using the *factory* provided if there's no value for this *key*. Raises
-        a :exc:`UndefinedScopeError` if the *scope* is not defined."""
+        a :exc:`yaak.inject.UndefinedScopeError` if the *scope* is not
+        defined."""
         # get the context dictionary for the scope or raise an error
         context, lock = self._get_context(scope)
         marker = object()
@@ -283,6 +287,30 @@ class ScopeContext(object):
         return False  # let the exception pass through
 
 
+class WSGIRequestScope(object):
+    """WSGI middleware that installs the :attr:`yaak.inject.Scope.Request`
+    contexts for the wrapped application."""
+
+    def __init__(self, app, scope_manager=None):
+        """Installs a :attr:`yaak.inject.Scope.Request` context for the
+        application *app*. That is, a new context will be used in each HTTP
+        request for storing the request scoped features. You can eventually
+        pass the *scope_manager* that will handle the scope contexts.
+        Otherwise, the default scope manager will be used."""
+        self.app = app
+        self.scope_manager = scope_manager
+
+    def __call__(self, environ, start_response):
+        """WSGI protocol"""
+        with ScopeContext(scope=Scope.Request,
+                          scope_manager=self.scope_manager):
+            # We iterate over the results to force the application to
+            # generate its results. Otherwise, we may unregister the context
+            # before the application really use it.
+            for item in self.app(environ, start_response):
+                yield item
+
+
 class MissingFeatureError(Exception):
     """Exception raised when no implementation has been provided for a
     feature."""
@@ -307,8 +335,9 @@ class FeatureProvider(object):
 
     def provide(self, feature, factory, scope=Scope.Thread):
         """Provide a *factory* that build (scoped) instances of the *feature*.
-        By default, the scope of the *feature* instance is :attr:`Scope.Thread`,
-        but you can change this by providing a *scope* parameter.
+        By default, the scope of the *feature* instance is
+        :attr:`yaak.inject.Scope.Thread`, but you can change this by providing
+        a *scope* parameter.
 
         Note that you can change the factory for a feature by providing the
         same feature again, but the injected instances that already have a
@@ -318,7 +347,9 @@ class FeatureProvider(object):
     def get(self, feature):
         """Retrieve a (scoped) feature instance. Either find the instance in
         the associated context or create a new instance using the factory
-        method and store it in the context."""
+        method and store it in the context. Raise a
+        :exc:`yaak.inject.MissingFeatureError` when no feature has been
+        provided yet."""
         feature_descriptor = self._feature_descriptors.get(feature)
         if feature_descriptor is None:
             raise MissingFeatureError("No feature provided for " + feature)
@@ -458,9 +489,11 @@ def bind(func, **frozen_args):
     called frozen arguments. But unlike the :func:`functools.partial` function, 
     the frozen parameters can be anywhere in the signature of the transformed
     function, they are not required to be the first or last ones. Also, you
-    can pass a :func:`late_binding` function as the value of a parameter
-    to get the value from a call to this function when the bound function is
-    called (this implements late binding).
+    can pass a :func:`yaak.inject.late_binding` function as the value of a
+    parameter to get the value from a call to this function when the bound
+    function is called (this implements late binding). Raises a
+    :exc:`yaak.inject.BindNotSupportedError` when passing an unsupported
+    function to bind, for example a function with variable arguments.
 
     Say you have a function :func:`add` defined like this::
 
@@ -554,40 +587,17 @@ def late_binding(func):
     the bound function is called"""
     func.__late_binding_factory__ = True
     return func
-#
-
-
-
-class WSGIRequestScope(object):
-    """WSGI middleware that installs the :attr:`Scope.Request` contexts for
-    the wrapped application."""
-
-    def __init__(self, app, scope_manager=None):
-        """Installs :attr:`Scope.Request` contexts for the application *app*.
-        That is, a new context will be used in each HTTP request for storing the
-        Request scoped features. You can eventually pass the *scope_manager*
-        that will handle the scope contexts. Otherwise, the default scope
-        manager will be used."""
-        self.app = app
-        self.scope_manager = scope_manager
-
-    def __call__(self, environ, start_response):
-        """WSGI protocol"""
-        with ScopeContext(scope=Scope.Request,
-                          scope_manager=self.scope_manager):
-            # We iterate over the results to force the application to
-            # generate its results. Otherwise, we may unregister the context
-            # before the application really use it.
-            for item in self.app(environ, start_response):
-                yield item
 
 
 # module helpers
 provide = _DefaultFeatureProvider.provide
-""":meth:`provide` a feature to the default feature provider"""
+"""Provides a *factory* for a *feature* to the default feature provider. See
+:meth:`yaak.inject.FeatureProvider.provide` for more information."""
 
 get = _DefaultFeatureProvider.get
-""":meth:`get` a feature from the default feature provider"""
+"""Gets a *feature* from the default feature provider. See
+:meth:`yaak.inject.FeatureProvider.get` for more information."""
 
 clear = _DefaultFeatureProvider.clear
-""":meth:`clear` the features from the default feature provider"""
+"""Clears the features from the default feature provider. See
+:meth:`yaak.inject.FeatureProvider.clear` for more information."""
