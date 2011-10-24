@@ -143,8 +143,17 @@ class Scope(object):
     """One instance per HTTP session"""
 
 
-class UndefinedScopeError(Exception):
+class ScopeError(Exception):
+    """Base class for all scope related errors"""
+
+
+class UndefinedScopeError(ScopeError):
     """Exception raised when using a scope that has not been entered yet."""
+
+
+class ScopeReenterError(ScopeError):
+    """Exception raised when re-entering a scope that has already been
+    entered."""
 
 
 # global application context
@@ -179,7 +188,11 @@ class ScopeManager(threading.local):
         useful for implementing session scopes, when we want to reinstall
         a previous context. You can also pass a lock to acquire when modifying
         the context dictionary via the parameter *context_lock* if the scope
-        is subject to thread concurrency issues."""
+        is subject to thread concurrency issues. Raises a
+        :exc:`yaak.inject.ScopeReenterError` when re-entering an already
+        entered *scope*."""
+        if scope in self._context:
+            raise ScopeReenterError("Scope %s already defined" % scope)
         self._context[scope] = (context if context is not None else {},
                                 context_lock)
 
@@ -478,7 +491,8 @@ class Param(object):
 
 
 class BindNotSupportedError(Exception):
-    """Exception raised when a function could not be used in the bind method."""
+    """Exception raised when a function could not be used in the
+    :meth:`yaak.inject.bind` method."""
 
 
 def bind(func, **frozen_args):

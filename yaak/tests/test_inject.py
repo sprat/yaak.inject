@@ -65,6 +65,11 @@ class TestScopeManager(unittest.TestCase):
         self.assertRaises(inject.UndefinedScopeError,
                           lambda: self.scope_manager._get_context('MyScope'))
 
+    def test_enter_scope_error(self):
+        self.scope_manager.enter_scope('MyScope')
+        self.assertRaises(inject.ScopeReenterError,
+                          lambda: self.scope_manager.enter_scope('MyScope'))
+
     def test_exit_scope_error(self):
         self.assertRaises(inject.UndefinedScopeError,
                           lambda: self.scope_manager.exit_scope('MyScope'))

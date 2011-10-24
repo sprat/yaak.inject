@@ -55,6 +55,10 @@ Exceptions
 
 .. autoexception:: yaak.inject.MissingFeatureError
    
+.. autoexception:: yaak.inject.ScopeError
+
 .. autoexception:: yaak.inject.UndefinedScopeError
+
+.. autoexception:: yaak.inject.ScopeReenterError
 
 .. autoexception:: yaak.inject.BindNotSupportedError
