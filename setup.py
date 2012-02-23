@@ -4,22 +4,21 @@
 # and may be redistributed under the terms of the MIT license. See the
 # LICENSE.txt file in this distribution for details.
 
-import os
+import os.path
 from setuptools import setup, find_packages
 from yaak.inject import __version__ as version
 
 
-def read(*rnames):
-    return open(os.path.join(os.getcwd(), *rnames)).read()
+here = os.path.dirname(__file__)
+
+
+def read(*path_parts):
+    return open(os.path.join(here, *path_parts)).read()
 
 
 desc = """A dependency injection framework for your python applications"""
+long_desc = '\n'.join(read(file) for file in ('README.txt', 'CHANGES.txt'))
 
-long_description = (
-    read('README.txt') +
-    '\n' +
-    read('CHANGES.txt')
-)
 
 setup(
     name='yaak.inject',
@@ -27,7 +26,7 @@ setup(
     author='Sylvain Prat',
     author_email='sylvain.prat+yaak.inject@gmail.com',
     description=desc,
-    long_description=long_description,
+    long_description=long_desc,
     license='MIT License',
     keywords='dependency, injection, inject',
     url='http://bitbucket.org/sprat/yaak.inject',
