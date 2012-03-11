@@ -4,16 +4,25 @@
 # and may be redistributed under the terms of the MIT license. See the
 # LICENSE file in this distribution for details.
 
-import os.path
+import os
+import re
+
 from setuptools import setup, find_packages
-from yaak.inject import __version__ as version
-
-
-here = os.path.dirname(__file__)
 
 
 def read(*path_parts):
+    here = os.path.dirname(__file__)
     return open(os.path.join(here, *path_parts)).read()
+
+
+def find_version(*file_paths):
+    version_file = read(*file_paths)
+    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
+                              version_file, re.M)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError("Unable to find version string.")
+
 
 
 desc = """A dependency injection framework for your python applications"""
@@ -22,7 +31,7 @@ long_desc = '\n'.join(read(f) for f in ('README', 'CHANGES'))
 
 setup(
     name='yaak.inject',
-    version=version,
+    version=find_version('yaak', 'inject.py'),
     author='Sylvain Prat',
     author_email='sylvain.prat+yaak.inject@gmail.com',
     description=desc,
