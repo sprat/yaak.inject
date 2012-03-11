@@ -2,7 +2,7 @@
    sphinx-quickstart on Thu Oct 20 23:30:16 2011.
 
 
-.. Include:: ../../README.txt
+.. Include:: ../../README
 
 Getting Started
 ===============
@@ -20,13 +20,13 @@ Documentation
    api.rst
 
 
-.. Include:: ../../CHANGES.txt
+.. Include:: ../../CHANGES
 
 
 MIT License
 ===========
 
-.. Include:: ../../LICENSE.txt
+.. Include:: ../../LICENSE
 
 
 Indices and tables
