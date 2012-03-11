@@ -1,13 +1,20 @@
 Changelog
 =========
 
-0.1.0 (23-Oct-2012)
--------------------
+0.3.0 (11-March-2012)
+---------------------
 
-* Initial release
+* The setup.py file does not import code anymore in order to retrieve the
+  version information, since it may cause some installation problems
+* Fixed bad years in the changelog, and reordered the items so that the most
+  recent changes appear first
+* Changed the aliases for releasing new versions
+* Fixed line endings (unix style)
+* Removed the extensions of the text files since it's a convention in the
+  Python world.
 
 
-0.2.0 (24-Oct-2012)
+0.2.0 (24-Oct-2011)
 -------------------
 
 * Fixed the broken lock acquire/release implementation when updating the
@@ -20,3 +27,9 @@ Changelog
 * ScopeManager.exit_scope now raise a UndefinedScopeError when exiting an
   undeclared scope
 * Fixed the API documentation
+
+
+0.1.0 (23-Oct-2011)
+-------------------
+
+* Initial release
