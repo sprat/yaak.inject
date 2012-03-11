@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 # Copyright (c) 2011-2012 Sylvain Prat. This program is open-source software,
 # and may be redistributed under the terms of the MIT license. See the
-# LICENSE.txt file in this distribution for details.
+# LICENSE file in this distribution for details.
 
 import os.path
 from setuptools import setup, find_packages
@@ -17,7 +17,7 @@ def read(*path_parts):
 
 
 desc = """A dependency injection framework for your python applications"""
-long_desc = '\n'.join(read(file) for file in ('README.txt', 'CHANGES.txt'))
+long_desc = '\n'.join(read(f) for f in ('README', 'CHANGES'))
 
 
 setup(
