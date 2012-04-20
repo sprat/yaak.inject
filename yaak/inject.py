@@ -83,7 +83,7 @@ of attributes:
 
 Then you could use the Client class and get the parameters injected
 automatically if you don't provide a value for them:
-  
+
   >>> client = Client('This is a text')
   >>> client.use_service()
   This is a text
@@ -92,7 +92,7 @@ automatically if you don't provide a value for them:
 That's the easiest way to declare injected parameters. But if you want to
 keep your class decoupled from the injection framework, you can also define
 the injection afterwards:
-  
+
   >>> class Client(object):
   ...   def __init__(self, text, service):
   ...     self.text = text
@@ -281,7 +281,7 @@ class ScopeContext(object):
         storing instance each time we enter the scope. So the *context*
         argument can be used to recall a previous context. If *context_lock*
         is specified, the lock will be acquired/released when the context
-        dictionary is updated, in order to avoid thread concurrency issues. 
+        dictionary is updated, in order to avoid thread concurrency issues.
         If *scope_manager* is specified, contexts will be stored in this
         *scope_manager*. Otherwise, the default scope manager will be used."""
         self.scope = scope
@@ -380,11 +380,11 @@ class Attr(object):
     """Descriptor that provides attribute-based dependency injection."""
 
     def __init__(self, feature, provider=None):
-        """Inject a *feature* as an instance attribute. *feature* can be any 
+        """Inject a *feature* as an instance attribute. *feature* can be any
         hashable identifier. If a *provider* is specified, the feature instance
         will be retrieved from this provider. Otherwise, the default
         feature provider will be used.
-        
+
         Example:
           >>> from yaak import inject
           >>> class Client(object):
@@ -437,7 +437,7 @@ class Param(object):
         receive feature instances. If a *provider* is specified, the feature
         instances will be retrieved from this provider. Otherwise, the default
         feature provider will be used.
-        
+
         Example:
           >>> from yaak import inject
           >>> class Client(object):
@@ -500,7 +500,7 @@ def bind(func, **frozen_args):
     implements partial application. That is, it's a way to transform a function
     to another function with less arguments, because some of the arguments of
     the original function will get some fixed values: these arguments are
-    called frozen arguments. But unlike the :func:`functools.partial` function, 
+    called frozen arguments. But unlike the :func:`functools.partial` function,
     the frozen parameters can be anywhere in the signature of the transformed
     function, they are not required to be the first or last ones. Also, you
     can pass a :func:`yaak.inject.late_binding` function as the value of a
@@ -525,15 +525,15 @@ def bind(func, **frozen_args):
       2
       >>> add_one(2)
       3
-      
+
     Now, an example of late binding::
-      
+
       >>> import itertools
       >>> count = itertools.count(0)
       >>> def more_and_more():
       ...   return count.next()
       ...
-      >>> add_more_and_more = bind(add, b=late_binding(more_and_more)) 
+      >>> add_more_and_more = bind(add, b=late_binding(more_and_more))
       >>> add_more_and_more(1)
       1
       >>> add_more_and_more(1)
