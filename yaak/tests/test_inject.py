@@ -90,24 +90,42 @@ class TestScopeManager(unittest.TestCase):
 class TestScopeContext(unittest.TestCase):
     def setUp(self):
         # use a new scope manager for each test!
-        self.scope_manager = inject.ScopeManager()
-        self.provider = inject.FeatureProvider(self.scope_manager)
+        scope_manager = inject.ScopeManager()
+        self.request_scope = inject.ScopeContext(inject.Scope.Request,
+                                                 scope_manager=scope_manager)
+
+        # add an object in the context of the request scope
         self.instance = object()
+        self.provider = inject.FeatureProvider(scope_manager)
         self.provider.provide('instance',
                               lambda: self.instance,
                               scope=inject.Scope.Request)
 
-        self.context = inject.ScopeContext(inject.Scope.Request,
-                                           scope_manager=self.scope_manager)
-
-    def test_context_manager(self):
+    def test_enter_exit_scope(self):
         self.assertRaises(inject.UndefinedScopeError,
                           lambda: self.provider.get('instance'))
-        with self.context:
+
+        with self.request_scope:
             instance = self.provider.get('instance')
             self.assert_(instance is self.instance)
+
         self.assertRaises(inject.UndefinedScopeError,
                           lambda: self.provider.get('instance'))
+
+    # FIXME: these tests should pass
+#    def test_context_get(self):
+#        with self.request_scope as context:
+#            func = lambda: context.get('instance')
+#
+#        self.assert_(func() is self.instance)
+#
+#    def test_context_set(self):
+#        another_instance = object()
+#        with self.request_scope as context:
+#            context.set('instance', another_instance)
+#
+#        with self.request_scope as context:
+#            self.assert_(context.get('instance') is another_instance)
 
 
 class TestFeatureProvider(unittest.TestCase):
