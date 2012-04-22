@@ -112,21 +112,6 @@ class TestScopeContext(unittest.TestCase):
         self.assertRaises(inject.UndefinedScopeError,
                           lambda: self.provider.get('instance'))
 
-    # FIXME: these tests should pass
-#    def test_context_get(self):
-#        with self.request_scope as context:
-#            func = lambda: context.get('instance')
-#
-#        self.assert_(func() is self.instance)
-#
-#    def test_context_set(self):
-#        another_instance = object()
-#        with self.request_scope as context:
-#            context.set('instance', another_instance)
-#
-#        with self.request_scope as context:
-#            self.assert_(context.get('instance') is another_instance)
-
 
 class TestFeatureProvider(unittest.TestCase):
     def setUp(self):
