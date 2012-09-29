@@ -556,7 +556,7 @@ def bind(func, **frozen_args):
     def inner_func(*inner_args, **inner_kwargs):
         # call the value if it is a late binding factory
         def resolve(value):
-            if getattr(value, '__late_binding_factory__', False):
+            if getattr(value, 'late_binding', False):
                 return value()
             else:
                 return value
@@ -597,9 +597,9 @@ def bind(func, **frozen_args):
 
 
 def late_binding(func):
-    """Create a late binding by providing a factory function to be called when
-    the bound function is called"""
-    func.__late_binding_factory__ = True
+    """Mark a callable as a late binding: it will be called to supply the
+    value of a frozen argument in ``bind``."""
+    func.late_binding = True
     return func
 
 
