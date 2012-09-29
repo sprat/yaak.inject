@@ -5,6 +5,8 @@ Changelog
 0.2.2 (?)
 ---------------------
 
+* The ``provide`` method/function can now be used as a decorator
+* Improved the documentation of the ``late_binding`` function
 * PEP8 conformance
 
 
