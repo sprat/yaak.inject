@@ -295,7 +295,7 @@ class ScopeContext(object):
                                        self.context_lock)
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type_, value, traceback):
         self.scope_manager.exit_scope(self.scope)
         return False  # let the exception pass through
 
@@ -394,15 +394,15 @@ class Attr(object):
         self.provider = provider or _DefaultFeatureProvider
         self._name = None  # cache for the attribute name
 
-    def _find_name(self, type):
+    def _find_name(self, type_):
         """Look for the name of the attribute that references this
         descriptor."""
-        for cls in type.__mro__:  # support inheritance of injected classes
+        for cls in type_.__mro__:  # support inheritance of injected classes
             for key, value in cls.__dict__.items():
                 if value is self:
                     return key
 
-    def __get__(self, obj, type=None):
+    def __get__(self, obj, type_=None):
         """Descriptor protocol: bind a feature instance to the object passed
         to the descriptor."""
         if obj is None:
@@ -416,7 +416,7 @@ class Attr(object):
 
         # find the name of the attribute that references this descriptor
         if not self._name:
-            self._name = self._find_name(type)
+            self._name = self._find_name(type_)
 
         # replace this descriptor by the bound feature instance
         setattr(obj, self._name, feature)
