@@ -346,7 +346,7 @@ class FeatureProvider(object):
         """Unregister all features."""
         self._feature_descriptors = {}
 
-    def provide(self, feature, factory, scope=Scope.Thread):
+    def provide(self, feature, factory=None, scope=Scope.Thread):
         """Provide a *factory* that build (scoped) instances of the *feature*.
         By default, the scope of the *feature* instance is
         :attr:`yaak.inject.Scope.Thread`, but you can change this by providing
@@ -355,7 +355,15 @@ class FeatureProvider(object):
         Note that you can change the factory for a feature by providing the
         same feature again, but the injected instances that already have a
         reference on the feature instance will not get a new instance."""
-        self._feature_descriptors[feature] = (factory, scope)
+        def set_feature_descriptor(factory):
+            self._feature_descriptors[feature] = (factory, scope)
+            return factory
+
+        if not factory:
+            # decorator usage
+            return set_feature_descriptor
+
+        set_feature_descriptor(factory)
 
     def get(self, feature):
         """Retrieve a (scoped) feature instance. Either find the instance in

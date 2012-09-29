@@ -178,6 +178,14 @@ class TestFeatureProvider(unittest.TestCase):
         o = self.provide_singleton(Interface)
         self.assertEquals(o, self.provider.get(Interface))
 
+    def test_provide_decorator(self):
+        @self.provider.provide('factory')
+        class Factory():
+            pass
+
+        f = self.provider.get('factory')
+        self.assert_(isinstance(f, Factory))
+
     def test_an_exception_is_raised_when_accessing_a_missing_feature(self):
         self.assertRaises(inject.MissingFeatureError,
                           lambda: self.provider.get('invalid_feature'))
