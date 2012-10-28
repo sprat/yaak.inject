@@ -5,6 +5,9 @@ Changelog
 0.2.2 (?)
 ---------------------
 
+* Simpler implementation of the ``bind`` function. Should be faster too!
+* The ``bind`` function can now be used on functions with variable arguments
+* The ``bind`` function can be used as decorator
 * The ``provide`` method/function can now be used as a decorator
 * Improved the documentation of the ``late_binding`` function
 * PEP8 conformance
@@ -20,16 +23,16 @@ Changelog
 * Changed the aliases for releasing new versions
 * Fixed line endings (unix style)
 * Removed the extensions of the text files since it's a convention in the
-  Python world.
+  Python world
 
 
 0.2.0 (24-Oct-2011)
 -------------------
 
 * Fixed the broken lock acquire/release implementation when updating the
-  application context dictionary.
-* The locking mechanism is now available for all scopes.
-* The context manager is now responsible for updating the context dictionaries.
+  application context dictionary
+* The locking mechanism is now available for all scopes
+* The context manager is now responsible for updating the context dictionaries
 * Fixed duplicate factory calls when providing a factory returning None
 * ScopeManager.enter_scope now raise a ScopeReenterError when re-entering a
   scope

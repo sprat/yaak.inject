@@ -409,13 +409,14 @@ class TestBind(unittest.TestCase):
         func = inject.bind(func, b=inject.late_binding(lambda: 1))
         self.assertEqual(4, func(2))
 
-    def test_bind_fail_with_varargs(self):
+    def test_bind_with_varargs(self):
         def func(a, *args):
             return (a, args)
-        self.assertRaises(inject.BindNotSupportedError,
-                          lambda: inject.bind(func, a=0))
 
-    def test_bind_work_with_keyword_args(self):
+        func = inject.bind(func, a=0)
+        self.assertEquals((0, (1, 2)), func(1, 2))
+
+    def test_bind_with_keyword_args(self):
         def func(a, **kwargs):
             return a, kwargs
         func = inject.bind(func, a=1)
@@ -452,6 +453,17 @@ class TestBind(unittest.TestCase):
                 return self.value + a + b
 
             add = inject.bind(add, a=2)
+
+        self.assertEquals(10, Offset(5).add(3))
+
+    def test_decorator(self):
+        class Offset(object):
+            def __init__(self, value):
+                self.value = value
+
+            @inject.bind(a=2)
+            def add(self, a, b):
+                return self.value + a + b
 
         self.assertEquals(10, Offset(5).add(3))
 

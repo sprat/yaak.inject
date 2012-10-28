@@ -489,21 +489,15 @@ class Param(object):
                                    get_feature(feature, param))
             injected_params[param] = binding
 
-        # inject it (functools.partial is not suitable here)
+        # inject it
         new_func = bind(injected_function, **injected_params)
         new_func.injected_params = injected_params
         new_func.injected_function = injected_function
-        functools.update_wrapper(new_func, injected_function)
 
         return new_func
 
 
-class BindNotSupportedError(Exception):
-    """Exception raised when a function could not be used in the
-    :meth:`yaak.inject.bind` method."""
-
-
-def bind(func, **frozen_args):
+def bind(func=None, **frozen_args):
     """This function is similar to the :func:`functools.partial` function: it
     implements partial application. That is, it's a way to transform a function
     to another function with less arguments, because some of the arguments of
@@ -549,59 +543,30 @@ def bind(func, **frozen_args):
       >>> add_more_and_more(1)
       3
     """
-    # special case for methods (bound or unbound)
-    self = getattr(func, 'im_self', None)
-    func = getattr(func, 'im_func', func)
+    # can be used as a decorator
+    if func is None:
+        return lambda f: bind(f, **frozen_args)
 
-    # get signature information
-    argspec = inspect.getargspec(func)
+    # call the value if it is a late binding factory
+    def resolve(value):
+        if getattr(value, 'late_binding', False):
+            return value()
+        else:
+            return value
 
-    # variable arguments list is not supported
-    if argspec.varargs is not None:
-        msg = 'Could not bind a function with a variable arguments list'
-        raise BindNotSupportedError(msg)
+    args_names = inspect.getargspec(func)[0]
+    frozen_args = [(args_names.index(arg), arg, value)
+                   for arg, value in frozen_args.items()]
 
-    def inner_func(*inner_args, **inner_kwargs):
-        # call the value if it is a late binding factory
-        def resolve(value):
-            if getattr(value, 'late_binding', False):
-                return value()
-            else:
-                return value
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        args = list(args)
+        for idx, arg, value in frozen_args:
+            if not arg in kwargs:
+                args.insert(idx, resolve(value))
+        return func(*args, **kwargs)
 
-        arg_dict = dict((arg, resolve(value))
-                        for arg, value in frozen_args.items())
-
-        # special case for bound methods: add self to the keyword arguments
-        if self:
-            arg_dict['self'] = self
-
-        arg_idx = 0
-        for arg in argspec.args:
-            # bound argument?
-            if arg in arg_dict:
-                continue
-
-            # are we finished with positional inner arguments?
-            if arg_idx >= len(inner_args):
-                break
-
-            # check that the positional argument is not also passed in
-            # keyword arguments?
-            if arg in inner_kwargs:
-                msg = ("%s() got multiple values for keyword argument '%s'"
-                       % (func.__name__, arg))
-                raise TypeError(msg)
-
-            # OK, use the next positional argument
-            arg_dict[arg] = inner_args[arg_idx]
-            arg_idx += 1
-
-        # call the bound function with the extended arguments list
-        arg_dict.update(inner_kwargs)
-        return func(**arg_dict)
-
-    return inner_func
+    return wrapper
 
 
 def late_binding(func):
