@@ -344,15 +344,12 @@ class FeatureProvider(object):
         Note that you can change the factory for a feature by providing the
         same feature again, but the injected instances that already have a
         reference on the feature instance will not get a new instance."""
-        def set_feature_descriptor(factory):
-            self._feature_descriptors[feature] = (factory, scope)
-            return factory
-
+        # decorator support
         if not factory:
-            # decorator usage
-            return set_feature_descriptor
+            return lambda f: self.provide(feature, f, scope=scope)
 
-        set_feature_descriptor(factory)
+        self._feature_descriptors[feature] = (factory, scope)
+        return factory
 
     def get(self, feature):
         """Retrieve a (scoped) feature instance. Either find the instance in
