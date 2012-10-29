@@ -10,13 +10,13 @@ import sys
 from yaak import inject
 
 
-def run_in_thread(func):
+def run_in_thread(func, *args, **kwargs):
     """Utility function that runs a function in a separate thread and
     returns its result."""
     def target():
         try:
             target.exc_info = None
-            target.result = func()  # store the result in the function __dict__
+            target.result = func(*args, **kwargs)
         except:
             target.exc_info = sys.exc_info()
 
@@ -45,8 +45,8 @@ class TestScopeManager(unittest.TestCase):
             self.store_in_context(inject.Scope.Application, 'test', 'test')
             context, _ = self.get_context(inject.Scope.Application)
             self.assertEquals(dict(test='test'), context)
-            context, _ = run_in_thread(
-                lambda: self.get_context(inject.Scope.Application))
+            context, _ = run_in_thread(self.get_context,
+                                       inject.Scope.Application)
             self.assertEquals(dict(test='test'), context)
         finally:
             self.scope_manager.clear_context(inject.Scope.Application)
@@ -60,8 +60,8 @@ class TestScopeManager(unittest.TestCase):
         self.store_in_context(inject.Scope.Thread, 'test', 'test')
         context, _ = self.get_context(inject.Scope.Thread)
         self.assertEquals(dict(test='test'), context)
-        context, _ = run_in_thread(
-            lambda: self.get_context(inject.Scope.Thread))
+        context, _ = run_in_thread(self.get_context,
+                                   inject.Scope.Thread)
         self.assertEquals({}, context)
 
     def test_fail_when_we_try_to_use_an_undeclared_scope(self):
@@ -152,9 +152,7 @@ class TestFeatureProvider(unittest.TestCase):
             class Factory():
                 pass
 
-            self.provider.provide('factory',
-                                  Factory,
-                                  scope=inject.Scope.Application)
+            self.provider.provide('factory', Factory, inject.Scope.Application)
             f1 = self.provider.get('factory')
             f2 = self.provider.get('factory')
             self.assert_(f1 is f2)
@@ -203,7 +201,7 @@ class TestFeatureProvider(unittest.TestCase):
         self.provider.provide('singleton', object, scope=inject.Scope.Thread)
 
         o1 = self.provider.get('singleton')
-        o_thread = run_in_thread(lambda: self.provider.get('singleton'))
+        o_thread = run_in_thread(self.provider.get, 'singleton')
         o2 = self.provider.get('singleton')
 
         self.assert_(o1 is o2)
@@ -214,7 +212,7 @@ class TestFeatureProvider(unittest.TestCase):
             self.provider.provide('singleton', object,
                                   scope=inject.Scope.Application)
             o = self.provider.get('singleton')
-            o_thread = run_in_thread(lambda: self.provider.get('singleton'))
+            o_thread = run_in_thread(self.provider.get, 'singleton')
             self.assert_(o is o_thread)
         finally:
             scope_manager = self.provider.scope_manager
