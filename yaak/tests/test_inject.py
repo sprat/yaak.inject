@@ -261,12 +261,12 @@ class TestAttr(unittest.TestCase):
         instance2 = o.service
         self.assert_(instance1 is instance2)
 
-    def test_same_instance_when_accessing_a_transient_feature_twice(self):
+    def test_different_instances_when_accessing_a_transient_feature_twice(self):
         self.provider.provide('service', object, scope=inject.Scope.Transient)
         o = self.Injected()
         instance1 = o.service
         instance2 = o.service
-        self.assert_(instance1 is instance2)
+        self.assert_(not instance1 is instance2)
 
     def test_different_instances_when_accessing_two_transient_attributes(self):
         self.provider.provide('service', object, scope=inject.Scope.Transient)

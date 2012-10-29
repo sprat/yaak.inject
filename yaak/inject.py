@@ -109,7 +109,6 @@ the injection afterwards:
   Service: I'm working hard
 """
 
-import collections
 import functools
 import inspect
 import threading
@@ -390,15 +389,6 @@ class Attr(object):
         """
         self.feature = feature
         self.provider = provider or _DefaultFeatureProvider
-        self._name = None  # cache for the attribute name
-
-    def _find_name(self, type_):
-        """Look for the name of the attribute that references this
-        descriptor."""
-        for cls in type_.__mro__:  # support inheritance of injected classes
-            for key, value in cls.__dict__.items():
-                if value is self:
-                    return key
 
     def __get__(self, obj, type_=None):
         """Descriptor protocol: bind a feature instance to the object passed
@@ -407,19 +397,7 @@ class Attr(object):
             msg = 'Injection is not supported for class instances'
             raise AttributeError(msg)
 
-        # get the feature instance to be bound to the object
-        callable_provider = isinstance(self.provider, collections.Callable)
-        provider = self.provider() if callable_provider else self.provider
-        feature = provider.get(self.feature)
-
-        # find the name of the attribute that references this descriptor
-        if not self._name:
-            self._name = self._find_name(type_)
-
-        # replace this descriptor by the bound feature instance
-        setattr(obj, self._name, feature)
-
-        return feature
+        return self.provider.get(self.feature)
 
 
 class Param(object):
@@ -463,10 +441,8 @@ class Param(object):
         injected_function = getattr(func, 'injected_function', func)
 
         # add the new injected parameter
-        callable_provider = isinstance(self.provider, collections.Callable)
-        provider = self.provider() if callable_provider else self.provider
         for param, feature in self.injections.items():
-            injected_params[param] = (lambda f=feature: provider.get(f))
+            injected_params[param] = (lambda f=feature: self.provider.get(f))
 
         # inject it
         new_func = bind(injected_function, **injected_params)
