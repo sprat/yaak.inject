@@ -484,11 +484,9 @@ def bind(func=None, **frozen_args):
     called frozen arguments. But unlike the :func:`functools.partial` function,
     the frozen parameters can be anywhere in the signature of the transformed
     function, they are not required to be the first or last ones. Also, you
-    can pass a :func:`yaak.inject.late_binding` function as the value of a
-    parameter to get the value from a call to this function when the bound
-    function is called (this implements late binding). Raises a
-    :exc:`yaak.inject.BindNotSupportedError` when passing an unsupported
-    function to bind, for example a function with variable arguments.
+    can pass a callable as the value of a parameter to get the value from a
+    call to this function when the bound function is called (this implements
+    late binding).
 
     Say you have a function :func:`add` defined like this::
 
@@ -514,7 +512,7 @@ def bind(func=None, **frozen_args):
       >>> def more_and_more():
       ...   return count.next()
       ...
-      >>> add_more_and_more = bind(add, b=late_binding(more_and_more))
+      >>> add_more_and_more = bind(add, b=more_and_more)
       >>> add_more_and_more(1)
       1
       >>> add_more_and_more(1)
