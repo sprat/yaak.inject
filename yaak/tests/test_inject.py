@@ -5,6 +5,7 @@
 
 import unittest
 import threading
+import sys
 
 from yaak import inject
 
@@ -13,12 +14,20 @@ def run_in_thread(func):
     """Utility function that runs a function in a separate thread and
     returns its result."""
     def target():
-        target.result = func()  # store the result in the function __dict__
+        try:
+            target.exc_info = None
+            target.result = func()  # store the result in the function __dict__
+        except:
+            target.exc_info = sys.exc_info()
 
     thread = threading.Thread(target=target)
     thread.start()
     thread.join()
-    return target.result
+
+    if target.exc_info:
+        raise target.exc_info[0], target.exc_info[1], target.exc_info[2]
+    else:
+        return target.result
 
 
 class TestScopeManager(unittest.TestCase):
@@ -251,17 +260,12 @@ class TestAttr(unittest.TestCase):
         instance2 = o.service
         self.assert_(instance1 is instance2)
 
-    def test_same_instance_when_accessing_a_transient_feature_twice(self):
+    def test_different_instances_when_accessing_a_transient_feature(self):
         self.provider.provide('service', object, scope=inject.Scope.Transient)
         o = self.Injected()
         instance1 = o.service
         instance2 = o.service
-        self.assert_(instance1 is instance2)
-
-    def test_different_instances_when_accessing_two_transient_attributes(self):
-        self.provider.provide('service', object, scope=inject.Scope.Transient)
-        o = self.Injected()
-        self.assert_(not o.service is o.another_service)
+        self.assert_(not instance1 is instance2)
 
     def test_missing_feature(self):
         o = self.Injected()
@@ -274,6 +278,17 @@ class TestAttr(unittest.TestCase):
         self.provider.provide('service', lambda: singleton)
         o = Inherited()
         self.assert_(o.service is singleton)
+
+    def test_rebind(self):
+        self.provider.provide('service', object)
+        o = self.Injected()
+
+        def other_thread():
+            return o.service
+
+        instance1 = run_in_thread(other_thread)
+        instance2 = o.service
+        self.assert_(not instance1 is instance2)
 
 
 class TestParam(unittest.TestCase):
@@ -347,6 +362,28 @@ class TestParam(unittest.TestCase):
         o = Offset()
         self.assertEquals(10, o.value)
 
+    def test_same_scope(self):
+        self.provider.provide('service', object)
+
+        @inject.Param(self.provider, service='service')
+        def func(service):
+            return service
+
+        instance1 = func()
+        instance2 = func()
+        self.assert_(instance1 is instance2)
+
+    def test_rebind(self):
+        self.provider.provide('service', object)
+
+        @inject.Param(self.provider, service='service')
+        def func(service):
+            return service
+
+        instance1 = run_in_thread(func)
+        instance2 = func()
+        self.assert_(not instance1 is instance2)
+
 
 class TestBind(unittest.TestCase):
     def test_bind_first_arg_with_positional_second_arg(self):
@@ -367,11 +404,11 @@ class TestBind(unittest.TestCase):
         func = inject.bind(func, a=1)
         self.assertEqual(7, func(b=3))
 
-    def test_we_can_override_a_bound_argument(self):
+    def test_we_cant_override_a_bound_argument(self):
         def func(a, b):
             return a + 2 * b
         func = inject.bind(func, a=1)
-        self.assertEqual(8, func(a=2, b=3))
+        self.assertRaises(TypeError, lambda: func(a=2, b=3))
 
     def test_fail_if_we_miss_an_argument(self):
         def func(a, b):
@@ -383,7 +420,7 @@ class TestBind(unittest.TestCase):
         def func(a, b):
             return a + 2 * b
         func = inject.bind(func, a=1)
-        self.assertRaises(TypeError, lambda: func(3, b=3))
+        self.assertRaises(TypeError, func, 3, b=3)
 
     def test_bind_last_arg(self):
         def func(a, b):
@@ -397,16 +434,16 @@ class TestBind(unittest.TestCase):
         func = inject.bind(func, b=1)
         self.assertEqual(13, func(2, 3))
 
-    def test_bind_function_arg(self):
-        def func(a, b):
-            return b(a)
-        func = inject.bind(func, b=lambda x: x * x)
-        self.assertEqual(4, func(2))
+    def test_bind_out_of_order_args(self):
+        def func(e, d, c, b, a):
+            return (e, d, c, b, a)
+        func = inject.bind(func, a=5, b=4, c=3, d=2)
+        self.assertEqual((1, 2, 3, 4, 5), func(1))
 
-    def test_bind_with_late_binding(self):
+    def test_bind_callable(self):
         def func(a, b):
             return a + 2 * b
-        func = inject.bind(func, b=inject.late_binding(lambda: 1))
+        func = inject.bind(func, b=lambda: 1)
         self.assertEqual(4, func(2))
 
     def test_bind_with_varargs(self):

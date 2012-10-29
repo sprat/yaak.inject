@@ -109,18 +109,12 @@ the injection afterwards:
   Service: I'm working hard
 """
 
-import collections
 import functools
 import inspect
-import logging
 import threading
 
 
 __version__ = "0.2.1"
-
-
-# logger that could help debug injection issues
-log = logging.getLogger(__name__)
 
 
 class Scope(object):
@@ -253,15 +247,10 @@ class ScopeManager(threading.local):
                 # create the instance
                 instance = factory()
                 context[key] = instance
-                log.debug('New instance %r created in scope %s for the key %r'
-                          % (instance, scope, key))
 
             # release the context lock
             if lock:
                 lock.release()
-        else:
-            log.debug('Found %r in scope %s for the key %r'
-                      % (instance, scope, key))
 
         return instance
 
@@ -400,15 +389,6 @@ class Attr(object):
         """
         self.feature = feature
         self.provider = provider or _DefaultFeatureProvider
-        self._name = None  # cache for the attribute name
-
-    def _find_name(self, type_):
-        """Look for the name of the attribute that references this
-        descriptor."""
-        for cls in type_.__mro__:  # support inheritance of injected classes
-            for key, value in cls.__dict__.items():
-                if value is self:
-                    return key
 
     def __get__(self, obj, type_=None):
         """Descriptor protocol: bind a feature instance to the object passed
@@ -417,21 +397,7 @@ class Attr(object):
             msg = 'Injection is not supported for class instances'
             raise AttributeError(msg)
 
-        # get the feature instance to be bound to the object
-        callable_provider = isinstance(self.provider, collections.Callable)
-        provider = self.provider() if callable_provider else self.provider
-        feature = provider.get(self.feature)
-
-        # find the name of the attribute that references this descriptor
-        if not self._name:
-            self._name = self._find_name(type_)
-
-        # replace this descriptor by the bound feature instance
-        setattr(obj, self._name, feature)
-        log.debug('%r has been injected into the attribute %r of %r'
-                  % (feature, self._name, obj))
-
-        return feature
+        return self.provider.get(self.feature)
 
 
 class Param(object):
@@ -474,20 +440,9 @@ class Param(object):
         injected_params = getattr(func, 'injected_params', {})
         injected_function = getattr(func, 'injected_function', func)
 
-        def get_feature(feature, param):
-            instance = provider.get(feature)
-            msg = ('%r has been injected into the parameter %r of %r'
-                   % (instance, param, injected_function))
-            log.debug(msg)
-            return instance
-
         # add the new injected parameter
-        callable_provider = isinstance(self.provider, collections.Callable)
-        provider = self.provider() if callable_provider else self.provider
         for param, feature in self.injections.items():
-            binding = late_binding(lambda feature=feature, param=param:
-                                   get_feature(feature, param))
-            injected_params[param] = binding
+            injected_params[param] = (lambda f=feature: self.provider.get(f))
 
         # inject it
         new_func = bind(injected_function, **injected_params)
@@ -505,11 +460,9 @@ def bind(func=None, **frozen_args):
     called frozen arguments. But unlike the :func:`functools.partial` function,
     the frozen parameters can be anywhere in the signature of the transformed
     function, they are not required to be the first or last ones. Also, you
-    can pass a :func:`yaak.inject.late_binding` function as the value of a
-    parameter to get the value from a call to this function when the bound
-    function is called (this implements late binding). Raises a
-    :exc:`yaak.inject.BindNotSupportedError` when passing an unsupported
-    function to bind, for example a function with variable arguments.
+    can pass a callable as the value of a parameter to get the value from a
+    call to this function when the bound function is called (this implements
+    late binding).
 
     Say you have a function :func:`add` defined like this::
 
@@ -535,7 +488,7 @@ def bind(func=None, **frozen_args):
       >>> def more_and_more():
       ...   return count.next()
       ...
-      >>> add_more_and_more = bind(add, b=late_binding(more_and_more))
+      >>> add_more_and_more = bind(add, b=more_and_more)
       >>> add_more_and_more(1)
       1
       >>> add_more_and_more(1)
@@ -547,33 +500,21 @@ def bind(func=None, **frozen_args):
     if func is None:
         return lambda f: bind(f, **frozen_args)
 
-    # call the value if it is a late binding factory
     def resolve(value):
-        if getattr(value, 'late_binding', False):
-            return value()
-        else:
-            return value
+        return value() if callable(value) else value
 
     args_names = inspect.getargspec(func)[0]
-    frozen_args = [(args_names.index(arg), arg, value)
-                   for arg, value in frozen_args.items()]
+    frozen_args = sorted((args_names.index(arg), value)
+                         for arg, value in frozen_args.items())
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         args = list(args)
-        for idx, arg, value in frozen_args:
-            if not arg in kwargs:
-                args.insert(idx, resolve(value))
+        for idx, value in frozen_args:
+            args.insert(idx, resolve(value))
         return func(*args, **kwargs)
 
     return wrapper
-
-
-def late_binding(func):
-    """Mark a callable as a late binding: it will be called to supply the
-    value of a frozen argument in ``bind``."""
-    func.late_binding = True
-    return func
 
 
 # module helpers
