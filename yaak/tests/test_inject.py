@@ -5,6 +5,7 @@
 
 import unittest
 import threading
+import sys
 
 from yaak import inject
 
@@ -13,12 +14,20 @@ def run_in_thread(func):
     """Utility function that runs a function in a separate thread and
     returns its result."""
     def target():
-        target.result = func()  # store the result in the function __dict__
+        try:
+            target.exc_info = None
+            target.result = func()  # store the result in the function __dict__
+        except:
+            target.exc_info = sys.exc_info()
 
     thread = threading.Thread(target=target)
     thread.start()
     thread.join()
-    return target.result
+
+    if target.exc_info:
+        raise target.exc_info[0], target.exc_info[1], target.exc_info[2]
+    else:
+        return target.result
 
 
 class TestScopeManager(unittest.TestCase):
