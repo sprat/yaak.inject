@@ -112,15 +112,10 @@ the injection afterwards:
 import collections
 import functools
 import inspect
-import logging
 import threading
 
 
 __version__ = "0.2.1"
-
-
-# logger that could help debug injection issues
-log = logging.getLogger(__name__)
 
 
 class Scope(object):
@@ -253,15 +248,10 @@ class ScopeManager(threading.local):
                 # create the instance
                 instance = factory()
                 context[key] = instance
-                log.debug('New instance %r created in scope %s for the key %r'
-                          % (instance, scope, key))
 
             # release the context lock
             if lock:
                 lock.release()
-        else:
-            log.debug('Found %r in scope %s for the key %r'
-                      % (instance, scope, key))
 
         return instance
 
@@ -428,8 +418,6 @@ class Attr(object):
 
         # replace this descriptor by the bound feature instance
         setattr(obj, self._name, feature)
-        log.debug('%r has been injected into the attribute %r of %r'
-                  % (feature, self._name, obj))
 
         return feature
 
@@ -474,20 +462,11 @@ class Param(object):
         injected_params = getattr(func, 'injected_params', {})
         injected_function = getattr(func, 'injected_function', func)
 
-        def get_feature(feature, param):
-            instance = provider.get(feature)
-            msg = ('%r has been injected into the parameter %r of %r'
-                   % (instance, param, injected_function))
-            log.debug(msg)
-            return instance
-
         # add the new injected parameter
         callable_provider = isinstance(self.provider, collections.Callable)
         provider = self.provider() if callable_provider else self.provider
         for param, feature in self.injections.items():
-            binding = late_binding(lambda feature=feature, param=param:
-                                   get_feature(feature, param))
-            injected_params[param] = binding
+            injected_params[param] = (lambda f=feature: provider.get(f))
 
         # inject it
         new_func = bind(injected_function, **injected_params)
@@ -547,12 +526,8 @@ def bind(func=None, **frozen_args):
     if func is None:
         return lambda f: bind(f, **frozen_args)
 
-    # call the value if it is a late binding factory
     def resolve(value):
-        if getattr(value, 'late_binding', False):
-            return value()
-        else:
-            return value
+        return value() if callable(value) else value
 
     args_names = inspect.getargspec(func)[0]
     frozen_args = sorted((args_names.index(arg), value)
@@ -566,13 +541,6 @@ def bind(func=None, **frozen_args):
         return func(*args, **kwargs)
 
     return wrapper
-
-
-def late_binding(func):
-    """Mark a callable as a late binding: it will be called to supply the
-    value of a frozen argument in ``bind``."""
-    func.late_binding = True
-    return func
 
 
 # module helpers

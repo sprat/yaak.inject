@@ -408,16 +408,10 @@ class TestBind(unittest.TestCase):
         func = inject.bind(func, a=5, b=4, c=3, d=2)
         self.assertEqual((1, 2, 3, 4, 5), func(1))
 
-    def test_bind_function_arg(self):
-        def func(a, b):
-            return b(a)
-        func = inject.bind(func, b=lambda x: x * x)
-        self.assertEqual(4, func(2))
-
-    def test_bind_with_late_binding(self):
+    def test_bind_callable(self):
         def func(a, b):
             return a + 2 * b
-        func = inject.bind(func, b=inject.late_binding(lambda: 1))
+        func = inject.bind(func, b=lambda: 1)
         self.assertEqual(4, func(2))
 
     def test_bind_with_varargs(self):

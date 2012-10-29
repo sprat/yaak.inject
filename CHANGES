@@ -6,12 +6,16 @@ Changelog
 ---------------------
 
 * Simpler implementation of the ``bind`` function. Should be faster too!
-* The ``bind`` function can now be used on functions with variable arguments
-* The ``bind`` function can be used as decorator
-* The ``bind`` function don't allow the override of injected parameters
+* The ``bind`` function can now be used on functions with varargs
+* The ``bind`` function can now be used as a decorator
+* The ``bind`` function doesn't allow the override of injected parameters
   anymore: it was a bad idea!
 * The ``provide`` method/function can now be used as a decorator
-* Improved the documentation of the ``late_binding`` function
+* Removed the ``late_binding`` feature since it was not necessary: if you want
+  to bind an argument with a function object but don't want it to be called
+  during the binding, put it inside a lambda.
+* Removed logging to reduce clutter: the user can log whatever he wants by
+  subclassing our classes
 * PEP8 conformance
 
 
