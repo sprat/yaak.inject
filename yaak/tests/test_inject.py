@@ -66,7 +66,7 @@ class TestScopeManager(unittest.TestCase):
 
     def test_fail_when_we_try_to_use_an_undeclared_scope(self):
         self.assertRaises(inject.UndefinedScopeError,
-                          lambda: self.get_context('MyScope'))
+                          self.get_context, 'MyScope')
 
     def test_enter_exit_scope(self):
         self.scope_manager.enter_scope('MyScope')
@@ -75,16 +75,16 @@ class TestScopeManager(unittest.TestCase):
                           self.get_context('MyScope'))
         self.scope_manager.exit_scope('MyScope')
         self.assertRaises(inject.UndefinedScopeError,
-                          lambda: self.get_context('MyScope'))
+                          self.get_context, 'MyScope')
 
     def test_enter_scope_error(self):
         self.scope_manager.enter_scope('MyScope')
         self.assertRaises(inject.ScopeReenterError,
-                          lambda: self.scope_manager.enter_scope('MyScope'))
+                          self.scope_manager.enter_scope, 'MyScope')
 
     def test_exit_scope_error(self):
         self.assertRaises(inject.UndefinedScopeError,
-                          lambda: self.scope_manager.exit_scope('MyScope'))
+                          self.scope_manager.exit_scope, 'MyScope')
 
     def test_enter_exit_scope_with_context(self):
         context = dict(test='test')
@@ -93,7 +93,7 @@ class TestScopeManager(unittest.TestCase):
                           self.get_context('MyScope'))
         self.scope_manager.exit_scope('MyScope')
         self.assertRaises(inject.UndefinedScopeError,
-                          lambda: self.get_context('MyScope'))
+                          self.get_context, 'MyScope')
 
 
 class TestScopeContext(unittest.TestCase):
@@ -112,14 +112,14 @@ class TestScopeContext(unittest.TestCase):
 
     def test_enter_exit_scope(self):
         self.assertRaises(inject.UndefinedScopeError,
-                          lambda: self.provider.get('instance'))
+                          self.provider.get, 'instance')
 
         with self.request_scope:
             instance = self.provider.get('instance')
             self.assert_(instance is self.instance)
 
         self.assertRaises(inject.UndefinedScopeError,
-                          lambda: self.provider.get('instance'))
+                          self.provider.get, 'instance')
 
 
 class TestFeatureProvider(unittest.TestCase):
@@ -197,7 +197,7 @@ class TestFeatureProvider(unittest.TestCase):
 
     def test_an_exception_is_raised_when_accessing_a_missing_feature(self):
         self.assertRaises(inject.MissingFeatureError,
-                          lambda: self.provider.get('invalid_feature'))
+                          self.provider.get, 'invalid_feature')
 
     def test_scope_thread(self):
         self.provider.provide('singleton', object, scope=inject.Scope.Thread)
@@ -223,7 +223,7 @@ class TestFeatureProvider(unittest.TestCase):
     def test_invalid_scope(self):
         self.provider.provide('singleton', object, scope='oops')
         self.assertRaises(inject.UndefinedScopeError,
-                          lambda: self.provider.get('singleton'))
+                          self.provider.get, 'singleton')
 
 
 class TestAttr(unittest.TestCase):
@@ -251,7 +251,8 @@ class TestAttr(unittest.TestCase):
     def test_class_binding(self):
         singleton = object()
         self.provider.provide('service', lambda: singleton)
-        self.assertRaises(AttributeError, getattr, self.Injected, 'service')
+        self.assertRaises(AttributeError,
+                          getattr, self.Injected, 'service')
 
     def test_same_instance_when_accessing_a_singleton_feature_twice(self):
         self.provider.provide('service', object)
@@ -269,7 +270,8 @@ class TestAttr(unittest.TestCase):
 
     def test_missing_feature(self):
         o = self.Injected()
-        self.assertRaises(inject.MissingFeatureError, lambda: o.service)
+        self.assertRaises(inject.MissingFeatureError,
+                          getattr, o, 'service')
 
     def test_inheritance(self):
         class Inherited(self.Injected):
@@ -408,19 +410,22 @@ class TestBind(unittest.TestCase):
         def func(a, b):
             return a + 2 * b
         func = inject.bind(func, a=1)
-        self.assertRaises(TypeError, lambda: func(a=2, b=3))
+        self.assertRaises(TypeError,
+                          func, a=2, b=3)
 
     def test_fail_if_we_miss_an_argument(self):
         def func(a, b):
             return a + 2 * b
         func = inject.bind(func, a=1)
-        self.assertRaises(TypeError, func)
+        self.assertRaises(TypeError,
+                          func)
 
     def test_fail_when_passing_a_normal_argument_twice(self):
         def func(a, b):
             return a + 2 * b
         func = inject.bind(func, a=1)
-        self.assertRaises(TypeError, func, 3, b=3)
+        self.assertRaises(TypeError,
+                          func, 3, b=3)
 
     def test_bind_last_arg(self):
         def func(a, b):
