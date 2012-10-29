@@ -369,11 +369,12 @@ class TestBind(unittest.TestCase):
         func = inject.bind(func, a=1)
         self.assertEqual(7, func(b=3))
 
-    def test_we_can_override_a_bound_argument(self):
+    def test_we_cant_override_a_bound_argument(self):
         def func(a, b):
             return a + 2 * b
         func = inject.bind(func, a=1)
-        self.assertEqual(8, func(a=2, b=3))
+        with self.assertRaises(TypeError):
+            func(a=2, b=3)
 
     def test_fail_if_we_miss_an_argument(self):
         def func(a, b):
