@@ -1,0 +1,14 @@
+syntax: regexp
+\.egg-info$
+\.pyc$
+^cover$
+^build$
+^dist$
+^docs/build$
+^htmlcov$
+^\.coverage$
+^\.settings$
+^\.project$
+^\.pydevproject$
+^\.directory$
+^env

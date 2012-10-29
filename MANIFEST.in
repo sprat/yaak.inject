@@ -1,0 +1,6 @@
+include README
+include LICENSE
+include CHANGES
+graft docs
+prune docs/build
+prune .hg
