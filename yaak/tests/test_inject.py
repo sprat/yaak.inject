@@ -277,6 +277,17 @@ class TestAttr(unittest.TestCase):
         o = Inherited()
         self.assert_(o.service is singleton)
 
+    def test_rebind(self):
+        self.provider.provide('service', object)
+        o = self.Injected()
+
+        def other_thread():
+            return o.service
+
+        instance1 = run_in_thread(other_thread)
+        instance2 = o.service
+        self.assert_(not instance1 is instance2)
+
 
 class TestParam(unittest.TestCase):
     def setUp(self):
