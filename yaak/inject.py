@@ -555,8 +555,8 @@ def bind(func=None, **frozen_args):
             return value
 
     args_names = inspect.getargspec(func)[0]
-    frozen_args = [(args_names.index(arg), arg, value)
-                   for arg, value in frozen_args.items()]
+    frozen_args = sorted((args_names.index(arg), arg, value)
+                         for arg, value in frozen_args.items())
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):

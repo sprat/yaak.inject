@@ -401,6 +401,12 @@ class TestBind(unittest.TestCase):
         func = inject.bind(func, b=1)
         self.assertEqual(13, func(2, 3))
 
+    def test_bind_out_of_order_args(self):
+        def func(e, d, c, b, a):
+            return (e, d, c, b, a)
+        func = inject.bind(func, a=5, b=4, c=3, d=2)
+        self.assertEqual((1, 2, 3, 4, 5), func(1))
+
     def test_bind_function_arg(self):
         def func(a, b):
             return b(a)
