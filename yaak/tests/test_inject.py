@@ -261,17 +261,12 @@ class TestAttr(unittest.TestCase):
         instance2 = o.service
         self.assert_(instance1 is instance2)
 
-    def test_different_instances_when_accessing_a_transient_feature_twice(self):
+    def test_different_instances_when_accessing_a_transient_feature(self):
         self.provider.provide('service', object, scope=inject.Scope.Transient)
         o = self.Injected()
         instance1 = o.service
         instance2 = o.service
         self.assert_(not instance1 is instance2)
-
-    def test_different_instances_when_accessing_two_transient_attributes(self):
-        self.provider.provide('service', object, scope=inject.Scope.Transient)
-        o = self.Injected()
-        self.assert_(not o.service is o.another_service)
 
     def test_missing_feature(self):
         o = self.Injected()
@@ -368,6 +363,28 @@ class TestParam(unittest.TestCase):
 
         o = Offset()
         self.assertEquals(10, o.value)
+
+    def test_same_scope(self):
+        self.provider.provide('service', object)
+
+        @inject.Param(self.provider, service='service')
+        def func(service):
+            return service
+
+        instance1 = func()
+        instance2 = func()
+        self.assert_(instance1 is instance2)
+
+    def test_rebind(self):
+        self.provider.provide('service', object)
+
+        @inject.Param(self.provider, service='service')
+        def func(service):
+            return service
+
+        instance1 = run_in_thread(func)
+        instance2 = func()
+        self.assert_(not instance1 is instance2)
 
 
 class TestBind(unittest.TestCase):
