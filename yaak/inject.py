@@ -342,14 +342,17 @@ class FeatureProvider(object):
         a *scope* parameter.
 
         Note that you can change the factory for a feature by providing the
-        same feature again, but the injected instances that already have a
-        reference on the feature instance will not get a new instance."""
+        same feature again."""
+        # FIXME: remove the existing instances from the scopes?
         # decorator support
-        if not factory:
-            return lambda f: self.provide(feature, f, scope=scope)
+        def decorator(factory):
+            self._feature_descriptors[feature] = (factory, scope)
+            return factory
 
-        self._feature_descriptors[feature] = (factory, scope)
-        return factory
+        if not factory:
+            return decorator
+        else:
+            decorator(factory)
 
     def get(self, feature):
         """Retrieve a (scoped) feature instance. Either find the instance in
