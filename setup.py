@@ -26,7 +26,7 @@ def find_version(*file_paths):
 
 
 desc = """A dependency injection framework for your python applications"""
-long_desc = '\n'.join(read(f) for f in ('README', 'CHANGES'))
+long_desc = '\n'.join(read(f) for f in ('README.rst', 'CHANGES.rst'))
 
 
 setup(
@@ -38,8 +38,8 @@ setup(
     long_description=long_desc,
     license='MIT License',
     keywords='dependency, injection, inject',
-    url='http://bitbucket.org/sprat/yaak.inject',
-    download_url='http://pypi.python.org/pypi/yaak.inject',
+    url='https://github.com/sprat/yaak.inject',
+    download_url='https://pypi.python.org/pypi/yaak.inject',
     packages=find_packages(),
     namespace_packages=['yaak'],
     test_suite='yaak.tests',

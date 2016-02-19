@@ -1,0 +1,13 @@
+.project
+.pydevproject
+.settings
+.directory
+.coverage
+*.egg-info
+*.pyc
+cover
+build
+dist
+docs/build
+htmlcov
+venv

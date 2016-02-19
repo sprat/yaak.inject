@@ -1,6 +1,6 @@
-include README
+include README.rst
 include LICENSE
-include CHANGES
+include CHANGES.rst
 graft docs
 prune docs/build
-prune .hg
+prune .git

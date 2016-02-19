@@ -34,11 +34,8 @@ Support
 =======
 
 This project is hosted on `bitbucket.org
-<https://bitbucket.org/sprat/yaak.inject/>`__.
+<https://github.com/sprat/yaak.inject>`__.
 Please report issues via the bug tracker.
 
 The package documentation can be found `here
-<http://packages.python.org/yaak.inject/>`__.
-
-Automated tests are run over the mercurial repository regularly. Build results
-can be found `here <https://jenkins.shiningpanda.com/sprat/job/yaak.inject/>`__.
+<https://pythonhosted.org/yaak.inject/>`__.
