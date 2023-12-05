@@ -47,18 +47,14 @@ Helper tools
 
 .. autofunction:: yaak.inject.bind
 
-.. autofunction:: yaak.inject.late_binding
-
 
 Exceptions
 ==========
 
 .. autoexception:: yaak.inject.MissingFeatureError
-   
+
 .. autoexception:: yaak.inject.ScopeError
 
 .. autoexception:: yaak.inject.UndefinedScopeError
 
 .. autoexception:: yaak.inject.ScopeReenterError
-
-.. autoexception:: yaak.inject.BindNotSupportedError
