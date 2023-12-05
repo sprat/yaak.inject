@@ -38,7 +38,7 @@ setup(
     long_description=long_desc,
     license='MIT License',
     keywords='dependency, injection, inject',
-    url='https://github.com/sprat/yaak.inject',
+    url='https://gitlab.com/sprat/yaak.inject',
     download_url='https://pypi.python.org/pypi/yaak.inject',
     packages=find_packages(),
     namespace_packages=['yaak'],
