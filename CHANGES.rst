@@ -2,7 +2,7 @@ Changelog
 =========
 
 
-0.2.2 (?)
+0.3.0 (?)
 ---------------------
 
 * The project is now hosted on Github instead of Bitbucket
