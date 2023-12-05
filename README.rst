@@ -33,7 +33,7 @@ source archive and type::
 Support
 =======
 
-This project is hosted on `bitbucket.org
+This project is hosted on `Github
 <https://github.com/sprat/yaak.inject>`__.
 Please report issues via the bug tracker.
 
