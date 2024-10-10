@@ -33,8 +33,8 @@ source archive and type::
 Support
 =======
 
-This project is hosted on `GitLab
-<https://gitlab.com/sprat/yaak.inject>`__.
+This project is hosted on `GitHub
+<https://github.com/sprat/yaak.inject>`__.
 Please report issues via the bug tracker.
 
 The package documentation can be found `here

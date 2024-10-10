@@ -5,7 +5,7 @@ Changelog
 0.3.0 (?)
 ---------------------
 
-* The project is now hosted on GitLab
+* The project is now hosted on GitHub
 * Bugfix: the Attr's injected instances were not rebound when the associated
   scope changed
 * Simpler implementation of the ``bind`` function. Should be faster too!
